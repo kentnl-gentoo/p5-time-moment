@@ -5,6 +5,7 @@
 #include "ppport.h"
 #include "moment.h"
 #include "moment_fmt.h"
+#include "moment_parse.h"
 
 typedef int64_t I64V;
 
@@ -246,6 +247,24 @@ XS(XS_Time_Moment_ncmp) {
     XSRETURN_IV(moment_compare(m1, m2));
 }
 
+#ifdef HAS_GETTIMEOFDAY
+static moment_t
+THX_moment_now(pTHX) {
+    struct timeval tv;
+    struct tm *tm;
+    IV off, sec;
+
+    gettimeofday(&tv, NULL);
+    tm = localtime(&tv.tv_sec);
+
+    sec = ((1461 * (tm->tm_year - 1) >> 2) + tm->tm_yday - 25202) * 86400
+        + tm->tm_hour * 3600 + tm->tm_min * 60 + tm->tm_sec;
+    off = (sec - tv.tv_sec) / 60;
+
+    return moment_from_epoch(tv.tv_sec, tv.tv_usec, off);
+}
+#endif
+
 MODULE = Time::Moment   PACKAGE = Time::Moment
 
 PROTOTYPES: DISABLE
@@ -276,6 +295,20 @@ CODE:
 
 #endif
 
+#ifdef HAS_GETTIMEOFDAY
+
+moment_t
+now(klass)
+    SV *klass
+  PREINIT:
+    dSTASH_CONSTRUCTOR_MOMENT(klass);
+  CODE:
+    RETVAL = THX_moment_now(aTHX);
+  OUTPUT:
+    RETVAL
+
+#endif
+
 moment_t 
 from_epoch(klass, seconds, microsecond=0, offset=0)
     SV *klass
@@ -286,6 +319,20 @@ from_epoch(klass, seconds, microsecond=0, offset=0)
     dSTASH_CONSTRUCTOR_MOMENT(klass);
   CODE:
     RETVAL = moment_from_epoch(seconds, microsecond, offset);
+  OUTPUT:
+    RETVAL
+
+moment_t
+from_string(klass, string)
+    SV *klass
+    SV *string
+  PREINIT:
+    dSTASH_CONSTRUCTOR_MOMENT(klass);
+    STRLEN len;
+    const char *str;
+  CODE:
+    str = SvPV_const(string, len);
+    RETVAL = moment_from_string(str, len);
   OUTPUT:
     RETVAL
 
