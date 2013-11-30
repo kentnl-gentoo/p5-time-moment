@@ -2,6 +2,7 @@ Changes
 dev/bench.pl
 dev/sizeof.pl
 eg/clocks.pl
+eg/fmt.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
@@ -27,6 +28,12 @@ src/dt_accessor.h
 src/dt_config.h
 src/dt_core.c
 src/dt_core.h
+src/dt_parse.c
+src/dt_parse.h
+src/dt_util.c
+src/dt_util.h
+src/dt_valid.c
+src/dt_valid.h
 src/moment.c
 src/moment.h
 src/moment_fmt.c
