@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.05';
+    our $VERSION = '0.06';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -56,11 +56,6 @@ sub DateTime::__as_Time_Moment {
     my $usec = int($dt->nanosecond / 1000);
     my $off  = int($dt->offset / 60);
     return Time::Moment->from_epoch($dt->epoch, $usec, $off);
-}
-
-sub __as_Time_Piece {
-    my ($tm) = @_;
-    return scalar Time::Piece::localtime($tm->epoch);
 }
 
 sub Time::Piece::__as_Time_Moment {

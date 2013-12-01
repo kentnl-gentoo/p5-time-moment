@@ -1,16 +1,17 @@
 NAME
-    Time::Moment - Represents a date and time with a time zone offset from
-    UTC
+    Time::Moment - Represents a date and time of day combined with a time
+    zone offset from UTC
 
 SYNOPSIS
         $tm = Time::Moment->now;
         $tm = Time::Moment->from_epoch($seconds [, $microsecond [, $offset ]]);
         $tm = Time::Moment->from_object($object);
-        $tm = Time::Moment->from_string("YYYY-MM-DDThh:mm:ss.ffffff±hh:mm");
+        $tm = Time::Moment->from_string($string);
     
         $year         = $tm->year;                  # [1, 9999]
         $quarter      = $tm->quarter;               # [1, 4]
         $month        = $tm->month;                 # [1, 12]
+        $week         = $tm->week;                  # [1, 53]
     
         $day          = $tm->day_of_year;           # [1, 366]
         $day          = $tm->day_of_quarter;        # [1, 92]
@@ -51,13 +52,176 @@ SYNOPSIS
         $string       = "$tm";                      # YYYY-MM-DDThh:mm:ss.ffffff±hh:mm
 
 DESCRIPTION
-    Represents a date and time with a time zone offset from UTC in the ISO
-    8601 calendar with microsecond resolution.
+    Represents a date and time of day combined with a time zone offset from
+    UTC in the ISO 8601 calendar with microsecond resolution.
 
     IMPORTANT: This is an early preview release available for testing and
     feedback. The API is still subject to change.
 
 METHODS
+  now
+        $tm = Time::Moment->now;
+
+  from_epoch
+        $tm = Time::Moment->from_epoch($epoch);
+        $tm = Time::Moment->from_epoch($epoch, $microsecond);
+        $tm = Time::Moment->from_epoch($epoch, $microsecond, $offset);
+
+  from_object
+        $tm = Time::Moment->from_object($object);
+
+  from_string
+        $tm = Time::Moment->from_string($string);
+
+  year
+        $year = $tm->year;
+
+  quarter
+        $quarter = $tm->quarter;
+
+  month
+        $month = $tm->month;
+
+  week
+        $week = $tm->week;
+
+  day_of_year
+        $day = $tm->day_of_year;
+
+  day_of_quarter
+        $day = $tm->day_of_quarter;
+
+  day_of_month
+        $day = $tm->day_of_month;
+
+  day_of_week
+        $day = $tm->day_of_week;
+
+  hour
+        $hour = $tm->hour;
+
+  minute
+        $minute = $tm->minute;
+
+  second
+        $second = $tm->second;
+
+  millisecond
+        $millisecond = $tm->millisecond;
+
+  microsecond
+        $microsecond = $tm->microsecond;
+
+  epoch
+        $epoch = $tm->epoch;
+
+  offset
+        $offset = $tm->offset;
+
+  strftime
+        $string = $tm->strftime($format);
+
+    The following conversion specifications are supported:
+
+    %a  Replaced by the C locale's abbreviated day of the week name.
+        Example: Mon, Tue, ..., Sun.
+
+    %A  Replaced by the C locale's full day of the week name. Example:
+        Monday, Tuesday, ..., Sunday.
+
+    %b  Replaced by the C locale's abbreviated month name. Example: Jan,
+        Feb, ..., Dec.
+
+    %B  Replaced by the C locale's full month name. Example: January,
+        February, ..., December.
+
+    %c  XXX
+
+    %C  Replaced by the year divided by 100 and truncated to an integer, as
+        a decimal number [00, 99].
+
+    %d  Replaced by the day of the month as a decimal number [01, 31].
+
+    %D  Equivalent to "%m/%d/%y".
+
+    %e  Replaced by the day of the month as a decimal number [1, 31]; a
+        single digit is preceded by a space.
+
+    %f  Replaced by the fractional second (microsecond) as a decimal number
+        [000000, 999999].
+
+    %F  Equivalent to "%Y-%m-%d".
+
+    %g  Replaced by the last 2 digits of the year of the week as a decimal
+        number [00, 99].
+
+    %h  Equivalent to %b.
+
+    %H  Replaced by the hour (24-hour clock) as a decimal number [00, 23].
+
+    %I  Replaced by the hour (12-hour clock) as a decimal number [01, 12].
+
+    %j  Replaced by the day of the year as a decimal number [001, 366].
+
+    %m  Replaced by the month of the year as a decimal number [01, 12].
+
+    %M  Replaced by the minute as a decimal number [00, 59].
+
+    %n  Replaced by a <newline> character.
+
+    %N  XXX
+
+    %p  Replaced by the C locale's meridian notation. Example: AM, PM.
+
+    %r  Replaced by the C locale's time in a.m. and p.m. notation.
+        Equivalent to "%I:%M:%S %p".
+
+    %R  Replaced by the time in 24-hour notation. Equivalent to "%H:%M".
+
+    %S  Replaced by the second as a decimal number [00, 60].
+
+    %t  Replaced by a <tab> character.
+
+    %T  Replaced by the time of day. Equivalent to "%H:%M:%S".
+
+    %u  Replaced by the day of the week as a decimal number [1, 7], with 1
+        representing Monday.
+
+    %U  Replaced by the week number of the year as a decimal number [00,
+        53]. The first Sunday of January is the first day of week 1; days in
+        the new year before this are in week 0.
+
+    %V  Replaced by the week number of the year (Monday as the first day of
+        the week) as a decimal number [01, 53]. If the week containing 1
+        January has four or more days in the new year, then it is considered
+        week 1. Otherwise, it is the last week of the previous year, and the
+        next week is week 1. Both January 4th and the first Thursday of
+        January are always in week 1. ISO 8601 calendar week number.
+
+    %W  Replaced by the week number of the year as a decimal number [00,
+        53]. The first Monday of January is the first day of week 1; days in
+        the new year before this are in week 0.
+
+    %x  Replaced by ISO 8601 calendar date in extended format. Equivalent to
+        %F.
+
+    %X  Replaced by ISO 8601 local time of day in extended format.
+        Equivalent to %T.
+
+    %y  Replaced by the last two digits of the year as a decimal number [00,
+        99].
+
+    %Y  Replaced by the year as a decimal number [0001, 9999].
+
+    %z  Replaced by the offset from UTC in the ISO 8601 basic format (+hhmm
+        or -hhmm).
+
+    %Z  Replaced by the offset from UTC in the ISO 8601 extended format or
+        with UTC designator (+hh:mm or -hh:mm or Z).
+
+    "%%"
+        Replaced by %.
+
 DIAGNOSTICS
     (F) Usage: %s
         Method called with wrong number of arguments.
