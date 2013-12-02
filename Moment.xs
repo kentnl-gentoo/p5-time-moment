@@ -467,7 +467,17 @@ strftime(self, format)
   PREINIT:
     STRLEN len;
     const char *str;
+    SV *ret;
   PPCODE:
     str = SvPV_const(format, len);
-    XSRETURN_SV(moment_strftime(self, str, len));
+    ret = moment_strftime(self, str, len);
+    if (SvUTF8(format))
+        SvUTF8_on(ret);
+    XSRETURN_SV(ret);
+
+void
+to_string(self)
+    const moment_t *self
+  PPCODE:
+    XSRETURN_SV(moment_to_string(self));
 

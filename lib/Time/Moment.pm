@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.06';
+    our $VERSION = '0.07';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -30,7 +30,7 @@ sub now {
     return $class->from_epoch($sec, $usec, $off);
 }
 EOC
-        Carp::croak($@) if $@;
+        die $@ if $@;
     }
 }
 
@@ -50,7 +50,7 @@ sub DateTime::__as_Time_Moment {
     my ($dt) = @_;
 
     (!$dt->time_zone->is_floating)
-      or Carp::croak(q/Cannot coerce an instance of DateTime in the "floating" /
+      or Carp::croak(q/Cannot coerce an instance of DateTime in the 'floating' /
                     .q/time zone to an instance of Time::Moment/);
 
     my $usec = int($dt->nanosecond / 1000);
