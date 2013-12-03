@@ -1,5 +1,5 @@
 ---
-abstract: 'Represents a date and time of day combined with a time zone offset from UTC'
+abstract: 'Represents a date and time of day with an offset from UTC'
 author:
   - 'Christian Hansen C<chansen@cpan.org>'
 build_requires:
@@ -29,4 +29,4 @@ resources:
   bugtracker: https://github.com/chansen/p5-time-moment/issues
   license: http://dev.perl.org/licenses/
   repository: https://github.com/chansen/p5-time-moment
-version: 0.07
+version: 0.08

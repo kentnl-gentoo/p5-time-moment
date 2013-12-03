@@ -1,33 +1,34 @@
 NAME
-    Time::Moment - Represents a date and time of day combined with a time
-    zone offset from UTC
+    Time::Moment - Represents a date and time of day with an offset from UTC
 
 SYNOPSIS
         $tm = Time::Moment->now;
-        $tm = Time::Moment->from_epoch($seconds [, $microsecond [, $offset ]]);
+        $tm = Time::Moment->from_epoch($seconds [, $nanosecond [, $offset ]]);
         $tm = Time::Moment->from_object($object);
         $tm = Time::Moment->from_string($string);
     
-        $year         = $tm->year;                  # [1, 9999]
-        $quarter      = $tm->quarter;               # [1, 4]
-        $month        = $tm->month;                 # [1, 12]
-        $week         = $tm->week;                  # [1, 53]
+        $year         = $tm->year;                          # [1, 9999]
+        $quarter      = $tm->quarter;                       # [1, 4]
+        $month        = $tm->month;                         # [1, 12]
+        $week         = $tm->week;                          # [1, 53]
     
-        $day          = $tm->day_of_year;           # [1, 366]
-        $day          = $tm->day_of_quarter;        # [1, 92]
-        $day          = $tm->day_of_month;          # [1, 31]
-        $day          = $tm->day_of_week;           # [1=Monday, 7=Sunday]
+        $day          = $tm->day_of_year;                   # [1, 366]
+        $day          = $tm->day_of_quarter;                # [1, 92]
+        $day          = $tm->day_of_month;                  # [1, 31]
+        $day          = $tm->day_of_week;                   # [1=Monday, 7=Sunday]
     
-        $hour         = $tm->hour;                  # [0, 23]
-        $minute       = $tm->minute;                # [0, 59]
-        $second       = $tm->second;                # [0, 59]
-        $millisecond  = $tm->millisecond;           # [0, 999]
-        $microsecond  = $tm->microsecond;           # [0, 999_999]
+        $hour         = $tm->hour;                          # [0, 23]
+        $minute       = $tm->minute;                        # [0, 59]
+        $second       = $tm->second;                        # [0, 59]
+        $millisecond  = $tm->millisecond;                   # [0, 999]
+        $microsecond  = $tm->microsecond;                   # [0, 999_999]
+        $nanosecond   = $tm->nanosecond;                    # [0, 999_999_999]
     
         $epoch        = $tm->epoch;
-        $offset       = $tm->offset;                # [-1080, 1080]
+        $offset       = $tm->offset;                        # [-1080, 1080]
     
         $tm2          = $tm1->with_offset($offset);
+        $tm2          = $tm1->with_nanosecond($nanosecond);
     
         $boolean      = $tm1->is_before($tm2);
         $boolean      = $tm1->is_after($tm2);
@@ -53,8 +54,8 @@ SYNOPSIS
         $string       = "$tm";                      # YYYY-MM-DDThh:mm:ss.ffffff±hh:mm
 
 DESCRIPTION
-    Represents a date and time of day combined with a time zone offset from
-    UTC in the ISO 8601 calendar with microsecond resolution.
+    Represents a date and time of day with an offset from UTC in the ISO
+    8601 calendar system.
 
     IMPORTANT: This is an early preview release available for testing and
     feedback. The API is still subject to change.
@@ -68,9 +69,14 @@ METHODS
     set to the local time's offset from UTC.
 
   from_epoch
-        $tm = Time::Moment->from_epoch($epoch);
-        $tm = Time::Moment->from_epoch($epoch, $microsecond);
-        $tm = Time::Moment->from_epoch($epoch, $microsecond, $offset);
+        $tm = Time::Moment->from_epoch($seconds);
+        $tm = Time::Moment->from_epoch($seconds, $nanosecond);
+        $tm = Time::Moment->from_epoch($seconds, $nanosecond, $offset);
+
+    Constructs an instance of "Time::Moment" from the given *seconds* from
+    the epoch of 1970-01-01T00:00:00Z. The optional parameter *nanosecond*
+    specifies the nano of second [0, 999_999_999]. The optional parameter
+    *offset* specifies the offset from UTC in minutes [-1080, 1080].
 
   from_object
         $tm = Time::Moment->from_object($object);
@@ -80,10 +86,8 @@ METHODS
 
     Constructs an instance of "Time::Moment" from the given *string*. The
     string must consist of a complete representation of a date and time of
-    day followed by a zone designator. The second component of the time of
-    day may have a decimal fraction. All ISO 8601 date and time of day
-    representations are supported in both basic and extended format. The
-    constructor raises an exception if the given string cannot be parsed.
+    day followed by a zone designator. The second part of the time of day
+    may have a decimal fraction.
 
     The following are examples of complete representations of date and time
     of day representations:
@@ -164,7 +168,12 @@ METHODS
   microsecond
         $microsecond = $tm->microsecond;
 
-    Returns the micro of second [0, 999999].
+    Returns the micro of second [0, 999_999].
+
+  nanosecond
+        $nanosecond = $tm->nanosecond;
+
+    Returns the nano of second [0, 999_999_999].
 
   epoch
         $epoch = $tm->epoch;
@@ -179,8 +188,13 @@ METHODS
   with_offset
         $tm2 = $tm1->with_offset($offset);
 
-    Returns a copy of this time with the given *offset* altered. The result
-    is at the same instant.
+    Returns a copy of this time with the given *offset* altered. The
+    resulting time is at the same instant.
+
+  with_nanosecond
+        $tm2 = $tm1->with_nanosecond($nanosecond);
+
+    Returns a copy of this time with the given *nanosecond* altered.
 
   is_before
         $boolean = $tm->is_before($other);
@@ -211,18 +225,20 @@ METHODS
   to_string
         $string = $tm->to_string;
 
-    Returns a string representation of the object in one of the following
-    ISO 8601 formats:
+    Returns a string representation of the instance in one of the following
+    formats:
 
-        YYYY-MM-DDThh:mmZ
-        YYYY-MM-DDThh:mm±hh
-        YYYY-MM-DDThh:mm±hh:mm
-        YYYY-MM-DDThh:mm:ss.fffZ
-        YYYY-MM-DDThh:mm:ss.fff±hh
-        YYYY-MM-DDThh:mm:ss.fff±hh:mm
-        YYYY-MM-DDThh:mm:ss.ffffffZ
-        YYYY-MM-DDThh:mm:ss.ffffff±hh
-        YYYY-MM-DDThh:mm:ss.ffffff±hh:mm
+        YYYY-MM-DDThh:mm
+        YYYY-MM-DDThh:mm:ss
+        YYYY-MM-DDThh:mm:ss.fff
+        YYYY-MM-DDThh:mm:ss.ffffff
+        YYYY-MM-DDThh:mm:ss.fffffffff
+
+    Followed by a zone designator in one of the following formats:
+
+        Z
+        ±hh
+        ±hh:mm
 
     The shortest representation will be used where the omitted parts are
     implied to be zero.
@@ -250,7 +266,8 @@ METHODS
     %B  Replaced by the C locale's full month name. Example: January,
         February, ..., December.
 
-    %c  XXX
+    %c  Replaced by the C locale's date and time representation. Equivalent
+        to "%a %b %e %H:%M:%S %Y".
 
     %C  Replaced by the year divided by 100 and truncated to an integer, as
         a decimal number [00, 99].
@@ -262,8 +279,19 @@ METHODS
     %e  Replaced by the day of the month as a decimal number [1, 31]; a
         single digit is preceded by a space.
 
-    %f  Replaced by the fractional second (microsecond) as a decimal number
-        [000000, 999999].
+    %f  Replaced by the fractional second including preceding decimal point
+        or by an empty string if no fractional second exists.
+
+            .fff        (millisecond)
+            .ffffff     (microsecond)
+            .fffffffff  (nanosecond)
+
+        The shortest representation is used.
+
+        *Please note that this this conversion specification is an extension
+        to the "IEEE Std 1003.1, 2013 Edition"
+        <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
+        html>*.
 
     %F  Equivalent to "%Y-%m-%d".
 
@@ -284,7 +312,28 @@ METHODS
 
     %n  Replaced by a <newline> character.
 
-    %N  XXX
+    %N  Replaced by the fractional second as a decimal number. This
+        conversion specification permits use of a optional width flag where
+        the default width of 0 will use the shortest representation.
+
+        Example:
+
+        %N or %0N is replaced by one of the following (shortest
+        representation):
+
+            fff        (millisecond)
+            ffffff     (microsecond)
+            fffffffff  (nanosecond)
+
+        %N4 is replaced by exactly four fractional digits, zero padded or
+        truncated if needed.
+
+            ffff
+
+        *Please note that this this conversion specification is an extension
+        to the "IEEE Std 1003.1, 2013 Edition"
+        <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
+        html>*.
 
     %p  Replaced by the C locale's meridian notation. Example: AM, PM.
 
@@ -314,17 +363,15 @@ METHODS
         January has four or more days in the new year, then it is considered
         week 1. Otherwise, it is the last week of the previous year, and the
         next week is week 1. Both January 4th and the first Thursday of
-        January are always in week 1. ISO 8601 calendar week number.
+        January are always in week 1.
 
     %W  Replaced by the week number of the year as a decimal number [00,
         53]. The first Monday of January is the first day of week 1; days in
         the new year before this are in week 0.
 
-    %x  Replaced by ISO 8601 calendar date in extended format. Equivalent to
-        %F.
+    %x  Replaced by the C locale's date representation. Equivalent to "%D".
 
-    %X  Replaced by ISO 8601 local time of day in extended format.
-        Equivalent to %T.
+    %X  Replaced by the C locale's time representation. Equivalent to "%T".
 
     %y  Replaced by the last two digits of the year as a decimal number [00,
         99].
@@ -341,7 +388,18 @@ METHODS
         Replaced by %.
 
   utc_rd_values
-        ($rd, $sod, $nano) = $tm->utc_rd_values;
+        ($rd, $sod, $nanosecond) = $tm->utc_rd_values;
+
+    Returns a list of three elements:
+
+    $rd
+            The number of days from the Rata Die epoch of 0001-01-01.
+
+    $sod
+            The second of the day [0, 86_399].
+
+    $nanosecond
+            The nano of the second [0, 999_999_999].
 
   utc_rd_as_seconds
         $seconds = $tm->utc_rd_as_seconds;
@@ -350,7 +408,18 @@ METHODS
     0001-01-01T00:00:00Z.
 
   local_rd_values
-        ($rd, $sod, $nano) = $tm->local_rd_values;
+        ($rd, $sod, $nanosecond) = $tm->local_rd_values;
+
+    Returns a list of three elements:
+
+    $rd
+            The number of days from the Rata Die epoch of 0001-01-01.
+
+    $sod
+            The second of the day [0, 86_399].
+
+    $nanosecond
+            The nano of the second [0, 999_999_999].
 
   local_rd_as_seconds
         $seconds = $tm->local_rd_as_seconds;

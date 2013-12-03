@@ -218,7 +218,7 @@ XS(XS_Time_Moment_stringify) {
     dVAR; dXSARGS;
     if (items < 1)
         croak("Wrong number of arguments to Time::Moment::(\"\"");
-    ST(0) = moment_strftime(sv_2moment_ptr(ST(0), "self"), "%c", 2);
+    ST(0) = moment_to_string(sv_2moment_ptr(ST(0), "self"), FALSE);
     XSRETURN(1);
 }
 
@@ -261,7 +261,7 @@ THX_moment_now(pTHX) {
         + tm->tm_hour * 3600 + tm->tm_min * 60 + tm->tm_sec;
     off = (sec - tv.tv_sec) / 60;
 
-    return moment_from_epoch(tv.tv_sec, tv.tv_usec, off);
+    return moment_from_epoch(tv.tv_sec, tv.tv_usec * 1000, off);
 }
 #endif
 
@@ -310,15 +310,15 @@ now(klass)
 #endif
 
 moment_t 
-from_epoch(klass, seconds, microsecond=0, offset=0)
+from_epoch(klass, seconds, nanosecond=0, offset=0)
     SV *klass
     I64V seconds
-    IV microsecond
+    IV nanosecond
     IV offset
   PREINIT:
     dSTASH_CONSTRUCTOR_MOMENT(klass);
   CODE:
-    RETVAL = moment_from_epoch(seconds, microsecond, offset);
+    RETVAL = moment_from_epoch(seconds, nanosecond, offset);
   OUTPUT:
     RETVAL
 
@@ -358,6 +358,19 @@ with_offset(self, offset)
   OUTPUT:
     RETVAL
 
+moment_t
+with_nanosecond(self, nanosecond)
+    const moment_t *self
+    IV nanosecond
+  PREINIT:
+    dSTASH_INVOCANT;
+  CODE:
+    if (nanosecond == moment_nanosecond(self))
+        XSRETURN(1);
+    RETVAL = moment_with_nanosecond(self, nanosecond);
+  OUTPUT:
+    RETVAL
+
 void
 year(self)
     const moment_t *self
@@ -375,7 +388,8 @@ year(self)
     Time::Moment::second         = 10
     Time::Moment::millisecond    = 11
     Time::Moment::microsecond    = 12
-    Time::Moment::offset         = 13
+    Time::Moment::nanosecond     = 13
+    Time::Moment::offset         = 14
   PREINIT:
     IV v = 0;
   PPCODE:
@@ -393,7 +407,8 @@ year(self)
         case 10: v = moment_second(self);           break;
         case 11: v = moment_millisecond(self);      break;
         case 12: v = moment_microsecond(self);      break;
-        case 13: v = moment_offset(self);           break;
+        case 13: v = moment_nanosecond(self);       break;
+        case 14: v = moment_offset(self);           break;
     }
     XSRETURN_IV(v);
 
@@ -479,5 +494,5 @@ void
 to_string(self)
     const moment_t *self
   PPCODE:
-    XSRETURN_SV(moment_to_string(self));
+    XSRETURN_SV(moment_to_string(self, TRUE));
 

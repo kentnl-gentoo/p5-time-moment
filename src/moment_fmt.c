@@ -93,19 +93,27 @@ moment_hour_meridiem(const moment_t *mt) {
 #define CHR(n, d) (char)('0' + ((n) / (d)) % 10)
 static void
 THX_format_f(pTHX_ const moment_t *mt, SV *dsv, int len) {
-    char buf[6];
-    int usec;
+    char buf[9];
+    int ns;
 
-    if (len > 6)
-        len = 6;
-    usec = moment_microsecond(mt);
+    if      (len > 9) len = 9;
+    else if (len < 0) len = 0;
+    ns = moment_nanosecond(mt);
+    if (len == 0) {
+        if      ((ns % 1000000) == 0) len = 3;
+        else if ((ns % 1000)    == 0) len = 6;
+        else                          len = 9;
+    }
     switch (len) {
-        case 6: buf[5] = CHR(usec, 1);
-        case 5: buf[4] = CHR(usec, 10);
-        case 4: buf[3] = CHR(usec, 100);
-        case 3: buf[2] = CHR(usec, 1000);
-        case 2: buf[1] = CHR(usec, 10000);
-        case 1: buf[0] = CHR(usec, 100000);
+        case 9: buf[8] = CHR(ns, 1);
+        case 8: buf[7] = CHR(ns, 10);
+        case 7: buf[6] = CHR(ns, 100);
+        case 6: buf[5] = CHR(ns, 1000);
+        case 5: buf[4] = CHR(ns, 10000);
+        case 4: buf[3] = CHR(ns, 100000);
+        case 3: buf[2] = CHR(ns, 1000000);
+        case 2: buf[1] = CHR(ns, 10000000);
+        case 1: buf[0] = CHR(ns, 100000000);
     }
     sv_catpvn(dsv, buf, len);
 }
@@ -183,42 +191,34 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
         if (p == e)
             break;
 
-        width = 6;
+        width = -1;
         s = p;
 
       label:
         ++s;
         switch (*s) {
-            case 'a':
+            case 'a': /* locale's abbreviated day of the week name */
                 sv_catpv(dsv, aDoW[dt_dow(dt) - 1]);
                 break;
-            case 'A':
+            case 'A': /* locale's full day of the week name */
                 sv_catpv(dsv, fDoW[dt_dow(dt) - 1]);
                 break;
+            case 'b': /* locale's abbreviated month name */
             case 'h':
-            case 'b':
                 sv_catpv(dsv, aMonth[month - 1]);
                 break;
-            case 'B':
+            case 'B': /* locale's full month name */
                 sv_catpv(dsv, fMonth[month - 1]);
                 break;
-            case 'c':
-                sv_catpvf(dsv, "%04d-%02d-%02dT%02d:%02d:%02d",
-                          year,
-                          month,
-                          day,
-                          moment_hour(mt),
-                          moment_minute(mt),
-                          moment_second(mt),
-                          moment_microsecond(mt));
-                if (moment_microsecond(mt)) {
-                    int us = moment_microsecond(mt);
-                    if (us < 1000)
-                        sv_catpvf(dsv, ".%03d", us);
-                    else
-                        sv_catpvf(dsv, ".%06d", us);
-                }
-                THX_format_Z(aTHX_ mt, dsv);
+            case 'c': /* locale's date and time (C locale: %a %b %e %H:%M:%S %Y) */
+                sv_catpvf(dsv, "%s %s %2d %02d:%02d:%02d %04d",
+                         aDoW[dt_dow(dt) - 1],
+                         aMonth[month - 1],
+                         day,
+                         moment_hour(mt),
+                         moment_minute(mt),
+                         moment_second(mt),
+                         year);
                 break;
             case 'C':
                 sv_catpvf(dsv, "%02d", year / 100);
@@ -226,17 +226,20 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
             case 'd':
                 sv_catpvf(dsv, "%02d", day);
                 break;
+            case 'x': /* locale's time representation (C locale: %m/%d/%y) */
             case 'D':
                 sv_catpvf(dsv, "%02d/%02d/%02d", month, day, year % 100);
                 break;
             case 'e':
                 sv_catpvf(dsv, "%2d", day);
                 break;
-            case 'f':
-                THX_format_f(aTHX_ mt, dsv, width);
+            case 'f': /* extended conversion specification */
+                if (width >= 0 || moment_nanosecond(mt)) {
+                    sv_catpvn(dsv, ".", 1);
+                    THX_format_f(aTHX_ mt, dsv, width);
+                }
                 break;
             case 'F':
-            case 'x':
                 sv_catpvf(dsv, "%04d-%02d-%02d", year, month, day);
                 break;
             case 'g':
@@ -263,13 +266,13 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
             case 'n':
                 sv_catpvn(dsv, "\n", 1);
                 break;
-            case 'N':
+            case 'N': /* extended conversion specification */
                 THX_format_f(aTHX_ mt, dsv, width);
                 break;
-            case 'p':
+            case 'p': /* locale's equivalent of either a.m. or p.m (C locale: AM or PM) */
                 sv_catpv(dsv, moment_hour_meridiem(mt));
                 break;
-            case 'r':
+            case 'r': /* locale's time in a.m. and p.m. notation (C locale: %I:%M:%S %p) */
                 sv_catpvf(dsv, "%02d:%02d:%02d %s",
                           moment_hour_12(mt),
                           moment_minute(mt),
@@ -290,7 +293,7 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
             case 't':
                 sv_catpvn(dsv, "\t", 1);
                 break;
-            case 'X':
+            case 'X': /* locale's date representation (C locale: %H:%M:%S) */
             case 'T':
                 sv_catpvf(dsv, "%02d:%02d:%02d",
                           moment_hour(mt),
@@ -316,7 +319,7 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
                 sv_catpvf(dsv, "%02d", year % 100);
                 break;
             case 'Y':
-                sv_catpvf(dsv, "%d", year);
+                sv_catpvf(dsv, "%04d", year);
                 break;
             case 'z':
                 THX_format_z(aTHX_ mt, dsv);
@@ -344,10 +347,10 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
 }
 
 SV *
-THX_moment_to_string(pTHX_ const moment_t *mt) {
+THX_moment_to_string(pTHX_ const moment_t *mt, bool reduced) {
     SV *dsv;
     dt_t dt;
-    int year, month, day, sec, us, offset, sign;
+    int year, month, day, sec, ns, offset, sign;
 
     dsv = sv_2mortal(newSV(16));
     SvCUR_set(dsv, 0);
@@ -360,14 +363,13 @@ THX_moment_to_string(pTHX_ const moment_t *mt) {
         year, month, day, moment_hour(mt), moment_minute(mt));
 
     sec = moment_second(mt);
-    us  = moment_microsecond(mt);
-    if (sec || us) {
+    ns  = moment_nanosecond(mt);
+    if (!reduced || (sec || ns)) {
         sv_catpvf(dsv, ":%02d", sec);
-        if (us) {
-            if (us < 1000)
-                sv_catpvf(dsv, ".%03d", us);
-            else
-                sv_catpvf(dsv, ".%06d", us);
+        if (ns) {
+            if      ((ns % 1000000) == 0) sv_catpvf(dsv, ".%03d", ns / 1000000);
+            else if ((ns % 1000)    == 0) sv_catpvf(dsv, ".%06d", ns / 1000);
+            else                          sv_catpvf(dsv, ".%09d", ns);
         }
     }
 
@@ -380,7 +382,7 @@ THX_moment_to_string(pTHX_ const moment_t *mt) {
         else
             sign = '+';
 
-        if ((offset % 60) == 0)
+        if (reduced && (offset % 60) == 0)
             sv_catpvf(dsv, "%c%02d", sign, offset / 60);
         else
             sv_catpvf(dsv, "%c%02d:%02d", sign, offset / 60, offset % 60);
