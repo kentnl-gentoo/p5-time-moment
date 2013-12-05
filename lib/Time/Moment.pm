@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.08';
+    our $VERSION = '0.09';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -28,6 +28,14 @@ sub now {
     my ($sec, $usec) = Time::HiRes::gettimeofday();
     my $off = int((timegm(localtime($sec)) - $sec) / 60);
     return $class->from_epoch($sec, $usec * 1000, $off);
+}
+
+sub now_utc {
+    @_ == 1 || Carp::croak(q/Usage: Time::Moment->now_utc()/);
+    my ($class) = @_;
+
+    my ($sec, $usec) = Time::HiRes::gettimeofday();
+    return $class->from_epoch($sec, $usec * 1000);
 }
 EOC
         die $@ if $@;

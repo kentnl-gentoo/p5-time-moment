@@ -3,6 +3,7 @@ NAME
 
 SYNOPSIS
         $tm = Time::Moment->now;
+        $tm = Time::Moment->now_utc;
         $tm = Time::Moment->from_epoch($seconds [, $nanosecond [, $offset ]]);
         $tm = Time::Moment->from_object($object);
         $tm = Time::Moment->from_string($string);
@@ -51,7 +52,7 @@ SYNOPSIS
         $boolean      = $tm1 <= $tm2;
         $boolean      = $tm1 >= $tm2;
     
-        $string       = "$tm";                      # YYYY-MM-DDThh:mm:ss.ffffff±hh:mm
+        $string       = "$tm";
 
 DESCRIPTION
     Represents a date and time of day with an offset from UTC in the ISO
@@ -60,13 +61,19 @@ DESCRIPTION
     IMPORTANT: This is an early preview release available for testing and
     feedback. The API is still subject to change.
 
-METHODS
+CONSTRUCTORS
   now
         $tm = Time::Moment->now;
 
     Constructs an instance of "Time::Moment" that is set to the current date
-    and time from the system clock in the system time-zone, with the offset
-    set to the local time's offset from UTC.
+    and time from the system clock in the system time zone, with the offset
+    set to the system's time zone offset from UTC.
+
+  now_utc
+        $tm = Time::Moment->now_utc;
+
+    Constructs an instance of "Time::Moment" that is set to the current date
+    and time from the system clock in the UTC time zone.
 
   from_epoch
         $tm = Time::Moment->from_epoch($seconds);
@@ -75,11 +82,38 @@ METHODS
 
     Constructs an instance of "Time::Moment" from the given *seconds* from
     the epoch of 1970-01-01T00:00:00Z. The optional parameter *nanosecond*
-    specifies the nano of second [0, 999_999_999]. The optional parameter
-    *offset* specifies the offset from UTC in minutes [-1080, 1080].
+    specifies the nanosecond [0, 999_999_999]. The optional parameter
+    *offset* specifies the time zone offset from UTC in minutes [-1080,
+    1080].
 
   from_object
         $tm = Time::Moment->from_object($object);
+
+    Constructs an instance of "Time::Moment" from the given *object*. If the
+    given object is an instance of "Time::Moment" it's returned otherwise an
+    attempt is made to coerce the given object to an instance of
+    "Time::Moment".
+
+    "Time::Moment" provides coercion handlers for the following object
+    types:
+
+    DateTime
+            $tm = Time::Moment->from_object( DateTime->now );
+            $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
+
+        The given "DateTime" object must be within the supported date range
+        and must have a time zone or a time zone offset from UTC, coercing
+        from the 'floating' time zone is not supported.
+
+    Time::Piece
+            $tm = Time::Moment->from_object( Time::Piece::localtime() );
+            $tm = Params::Coerce::coerce('Time::Moment', Time::Piece::localtime());
+
+        The given "Time::Piece" object must be within the supported date
+        range.
+
+    The coercion scheme is extensible and implemented as documented in
+    Params::Coerce.
 
   from_string
         $tm = Time::Moment->from_string($string);
@@ -87,7 +121,7 @@ METHODS
     Constructs an instance of "Time::Moment" from the given *string*. The
     string must consist of a complete representation of a date and time of
     day followed by a zone designator. The second part of the time of day
-    may have a decimal fraction.
+    representation may have a decimal fraction.
 
     The following are examples of complete representations of date and time
     of day representations:
@@ -105,6 +139,7 @@ METHODS
     Where complete representations using calendar dates are shown, ordinal
     dates or week dates may be substituted.
 
+METHODS
   year
         $year = $tm->year;
 
@@ -148,32 +183,32 @@ METHODS
   hour
         $hour = $tm->hour;
 
-    Returns the hour of day [0, 23].
+    Returns the hour of the day [0, 23].
 
   minute
         $minute = $tm->minute;
 
-    Returns the minute of hour [0, 59].
+    Returns the minute of the hour [0, 59].
 
   second
         $second = $tm->second;
 
-    Returns the second of minute [0, 59].
+    Returns the second of the minute [0, 59].
 
   millisecond
         $millisecond = $tm->millisecond;
 
-    Returns the milli of second [0, 999].
+    Returns the millisecond of the second [0, 999].
 
   microsecond
         $microsecond = $tm->microsecond;
 
-    Returns the micro of second [0, 999_999].
+    Returns the microsecond of the second [0, 999_999].
 
   nanosecond
         $nanosecond = $tm->nanosecond;
 
-    Returns the nano of second [0, 999_999_999].
+    Returns the nanosecond of the second [0, 999_999_999].
 
   epoch
         $epoch = $tm->epoch;
@@ -183,13 +218,13 @@ METHODS
   offset
         $offset = $tm->offset;
 
-    Returns the offset from UTC in minutes [-1080, 1080].
+    Returns the time zone offset from UTC in minutes [-1080, 1080].
 
   with_offset
         $tm2 = $tm1->with_offset($offset);
 
-    Returns a copy of this time with the given *offset* altered. The
-    resulting time is at the same instant.
+    Returns a copy of this time with the given time zone *offset* from UTC
+    in minutes altered. The resulting time is at the same instant.
 
   with_nanosecond
         $tm2 = $tm1->with_nanosecond($nanosecond);
@@ -247,7 +282,7 @@ METHODS
         $string = $tm->strftime($format);
 
     Formats time according to the conversion specifications in the given
-    format string. The format string consists of zero or more conversion
+    $format string. The format string consists of zero or more conversion
     specifications and ordinary characters. All ordinary characters are
     copied directly into the resulting string. A conversion specification
     consists of a percent sign "%" and one other character.
@@ -279,17 +314,29 @@ METHODS
     %e  Replaced by the day of the month as a decimal number [1, 31]; a
         single digit is preceded by a space.
 
-    %f  Replaced by the fractional second including preceding decimal point
-        or by an empty string if no fractional second exists.
+    %f  Replaced by the fractional second including the preceding decimal
+        point or by an empty string if no fractional seconds are present.
+        This conversion specification permits use of an optional maximum
+        field width [0, 9] where the default field width of 0 will use the
+        shortest representation.
+
+        Example:
+
+        %f or %0f is replaced by one of the following if fractional seconds
+        are present (shortest representation):
 
             .fff        (millisecond)
             .ffffff     (microsecond)
             .fffffffff  (nanosecond)
 
-        The shortest representation is used.
+        %4f is replaced by decimal point and exactly four fractional digits
+        (zero-padded on the right or truncated if needed) if fractional
+        seconds are present:
 
-        *Please note that this this conversion specification is an extension
-        to the "IEEE Std 1003.1, 2013 Edition"
+            .ffff
+
+        *This conversion specification is an extension to the "IEEE Std
+        1003.1"
         <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
         html>*.
 
@@ -298,23 +345,44 @@ METHODS
     %g  Replaced by the last 2 digits of the year of the week as a decimal
         number [00, 99].
 
+    %G  Replaced by the week-based year as a decimal number [0001, 9999].
+
     %h  Equivalent to %b.
 
-    %H  Replaced by the hour (24-hour clock) as a decimal number [00, 23].
+    %H  Replaced by the hour of day (24-hour clock) as a decimal number [00,
+        23].
 
-    %I  Replaced by the hour (12-hour clock) as a decimal number [01, 12].
+    %I  Replaced by the hour of day (12-hour clock) as a decimal number [01,
+        12].
 
     %j  Replaced by the day of the year as a decimal number [001, 366].
 
+    %k  Replaced by the hour of day (24-hour clock) as a decimal number [1,
+        23]; a single digit is preceded by a space.
+
+        *This conversion specification is an extension to the "IEEE Std
+        1003.1"
+        <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
+        html>*.
+
+    %l  Replaced by the hour (12-hour clock) as a decimal number [1, 12]; a
+        single digit is preceded by a space.
+
+        *This conversion specification is an extension to the "IEEE Std
+        1003.1"
+        <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
+        html>*.
+
     %m  Replaced by the month of the year as a decimal number [01, 12].
 
-    %M  Replaced by the minute as a decimal number [00, 59].
+    %M  Replaced by the minute of hour as a decimal number [00, 59].
 
     %n  Replaced by a <newline> character.
 
     %N  Replaced by the fractional second as a decimal number. This
-        conversion specification permits use of a optional width flag where
-        the default width of 0 will use the shortest representation.
+        conversion specification permits use of an optional maximum field
+        width [0, 9] where the default field width of 0 will use the
+        shortest representation.
 
         Example:
 
@@ -325,13 +393,13 @@ METHODS
             ffffff     (microsecond)
             fffffffff  (nanosecond)
 
-        %N4 is replaced by exactly four fractional digits, zero padded or
-        truncated if needed.
+        %N4 is replaced by exactly four fractional digits (zero-padded on
+        the right or truncated if needed):
 
             ffff
 
-        *Please note that this this conversion specification is an extension
-        to the "IEEE Std 1003.1, 2013 Edition"
+        *This conversion specification is an extension to the "IEEE Std
+        1003.1"
         <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
         html>*.
 
@@ -343,9 +411,14 @@ METHODS
     %R  Replaced by the time in 24-hour notation. Equivalent to "%H:%M".
 
     %s  Replaced by the number of seconds from the epoch of
-        1970-01-01T00:00:00Z.
+        1970-01-01T00:00:00Z as a decimal number.
 
-    %S  Replaced by the second as a decimal number [00, 60].
+        *This conversion specification is an extension to the "IEEE Std
+        1003.1"
+        <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
+        html>*.
+
+    %S  Replaced by the second of hour as a decimal number [00, 60].
 
     %t  Replaced by a <tab> character.
 
@@ -369,9 +442,11 @@ METHODS
         53]. The first Monday of January is the first day of week 1; days in
         the new year before this are in week 0.
 
-    %x  Replaced by the C locale's date representation. Equivalent to "%D".
+    %x  Replaced by the C locale's date representation. Equivalent to
+        "%m/%d/%y".
 
-    %X  Replaced by the C locale's time representation. Equivalent to "%T".
+    %X  Replaced by the C locale's time representation. Equivalent to
+        "%H:%M:%S".
 
     %y  Replaced by the last two digits of the year as a decimal number [00,
         99].
@@ -382,7 +457,7 @@ METHODS
         (±hhmm).
 
     %Z  Replaced by the offset from UTC in the ISO 8601 extended format or
-        with UTC designator (±hh:mm or Z).
+        by UTC designator (±hh:mm or Z).
 
     "%%"
         Replaced by %.
@@ -392,14 +467,13 @@ METHODS
 
     Returns a list of three elements:
 
-    $rd
-            The number of days from the Rata Die epoch of 0001-01-01.
+    $rd The number of days from the Rata Die epoch of 0001-01-01.
 
     $sod
-            The second of the day [0, 86_399].
+        The second of the day [0, 86_399].
 
     $nanosecond
-            The nano of the second [0, 999_999_999].
+        The nano of the second [0, 999_999_999].
 
   utc_rd_as_seconds
         $seconds = $tm->utc_rd_as_seconds;
@@ -412,14 +486,13 @@ METHODS
 
     Returns a list of three elements:
 
-    $rd
-            The number of days from the Rata Die epoch of 0001-01-01.
+    $rd The number of days from the Rata Die epoch of 0001-01-01.
 
     $sod
-            The second of the day [0, 86_399].
+        The second of the day [0, 86_399].
 
     $nanosecond
-            The nano of the second [0, 999_999_999].
+        The nano of the second [0, 999_999_999].
 
   local_rd_as_seconds
         $seconds = $tm->local_rd_as_seconds;
@@ -427,9 +500,68 @@ METHODS
     Returns the number of seconds from the Rata Die epoch of
     0001-01-01T00:00:00.
 
+OVERLOADED OPERATORS
+  stringification
+        $string = "$tm";
+
+    The $string will be in one of the following formats:
+
+        YYYY-MM-DDThh:mm:ss
+        YYYY-MM-DDThh:mm:ss.fff
+        YYYY-MM-DDThh:mm:ss.ffffff
+        YYYY-MM-DDThh:mm:ss.fffffffff
+
+    Followed by a zone designator in one of the following formats:
+
+        Z
+        ±hh:mm
+
+    The shortest representation will be used. This format is compatible with
+    ISO 8601 profiles, such as:
+
+    *   RFC 3339 Date and Time on the Internet: Timestamps
+        <http://tools.ietf.org/html/rfc3339>
+
+    *   RFC 4287 The Atom Syndication Format
+        <http://tools.ietf.org/html/rfc4287#section-3.3>
+
+    *   W3C Date and Time Formats <http://www.w3.org/TR/NOTE-datetime>
+
+    *   HTML5
+        <http://www.w3.org/TR/html5/infrastructure.html#global-dates-and-tim
+        es>
+
+    *   XML Schema <http://www.w3.org/TR/xmlschema-2/#dateTime>
+
+    The format string "%FT%T%f%Z" produces an equivalent string
+    representation using "strftime".
+
+        "$tm" eq $tm->strftime("%FT%T%f%Z");
+
+  comparison
+        $boolean = $tm1 == $tm2;
+        $boolean = $tm1 != $tm2;
+        $boolean = $tm1 <  $tm2;
+        $boolean = $tm1 >  $tm2;
+        $boolean = $tm1 <= $tm2;
+        $boolean = $tm1 >= $tm2;
+
 DIAGNOSTICS
     (F) Usage: %s
         Method called with wrong number of arguments.
+
+    (F) Parameter 'seconds' is out of supported range
+        Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the
+        range:
+
+            [ -62135596800 (0001-01-01T00:00:00Z),
+              253402300799 (9999-12-31T23:59:59Z) ]
+
+    (F) Parameter 'nanosecond' is out of the range [0, 999_999_999]
+    (F) Parameter 'offset' is out of the range [-1080, 1080]
+    (F) Cannot coerce object of type %s to Time::Moment
+    (F) Cannot parse the given string
+    (F) A %s object can only be compared to another %s object ('%s', '%s')
 
 SEE ALSO
 SUPPORT

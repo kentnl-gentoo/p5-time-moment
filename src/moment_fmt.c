@@ -234,7 +234,7 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
                 sv_catpvf(dsv, "%2d", day);
                 break;
             case 'f': /* extended conversion specification */
-                if (width >= 0 || moment_nanosecond(mt)) {
+                if (moment_nanosecond(mt)) {
                     sv_catpvn(dsv, ".", 1);
                     THX_format_f(aTHX_ mt, dsv, width);
                 }
@@ -256,6 +256,12 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
                 break;
             case 'j':
                 sv_catpvf(dsv, "%03d", dt_doy(dt));
+                break;
+            case 'k': /* extended conversion specification */
+                sv_catpvf(dsv, "%2d", moment_hour(mt));
+                break;
+            case 'l': /* extended conversion specification */
+                sv_catpvf(dsv, "%2d", moment_hour_12(mt));
                 break;
             case 'm':
                 sv_catpvf(dsv, "%02d", month);
@@ -284,7 +290,7 @@ THX_moment_strftime(pTHX_ const moment_t *mt, const char *s, STRLEN len) {
                           moment_hour(mt),
                           moment_minute(mt));
                 break;
-            case 's':
+            case 's': /* extended conversion specification */
                 THX_format_s(aTHX_ mt, dsv);
                 break;
             case 'S':
@@ -364,7 +370,7 @@ THX_moment_to_string(pTHX_ const moment_t *mt, bool reduced) {
 
     sec = moment_second(mt);
     ns  = moment_nanosecond(mt);
-    if (!reduced || (sec || ns)) {
+    if (!reduced || sec || ns) {
         sv_catpvf(dsv, ":%02d", sec);
         if (ns) {
             if      ((ns % 1000000) == 0) sv_catpvf(dsv, ".%03d", ns / 1000000);

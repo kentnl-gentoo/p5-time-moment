@@ -7,6 +7,7 @@ Time::Moment - Represents a date and time of day with an offset from UTC
 =head1 SYNOPSIS
     
     $tm = Time::Moment->now;
+    $tm = Time::Moment->now_utc;
     $tm = Time::Moment->from_epoch($seconds [, $nanosecond [, $offset ]]);
     $tm = Time::Moment->from_object($object);
     $tm = Time::Moment->from_string($string);
@@ -55,8 +56,7 @@ Time::Moment - Represents a date and time of day with an offset from UTC
     $boolean      = $tm1 <= $tm2;
     $boolean      = $tm1 >= $tm2;
     
-    $string       = "$tm";                      # YYYY-MM-DDThh:mm:ss.ffffff±hh:mm
-
+    $string       = "$tm";
 
 =head1 DESCRIPTION
 
@@ -66,15 +66,22 @@ calendar system.
 B<IMPORTANT:> This is an early preview release available for testing and 
 feedback. The API is still subject to change.
 
-=head1 METHODS
+=head1 CONSTRUCTORS
 
 =head2 now
 
     $tm = Time::Moment->now;
 
 Constructs an instance of C<Time::Moment> that is set to the current date 
-and time from the system clock in the system time-zone, with the offset 
-set to the local time's offset from UTC.
+and time from the system clock in the system time zone, with the offset 
+set to the system's time zone offset from UTC.
+
+=head2 now_utc
+
+    $tm = Time::Moment->now_utc;
+
+Constructs an instance of C<Time::Moment> that is set to the current date 
+and time from the system clock in the UTC time zone.
 
 =head2 from_epoch
 
@@ -84,12 +91,41 @@ set to the local time's offset from UTC.
 
 Constructs an instance of C<Time::Moment> from the given I<seconds> from the 
 epoch of 1970-01-01T00:00:00Z. The optional parameter I<nanosecond> specifies
-the nano of second [0, 999_999_999]. The optional parameter I<offset> 
-specifies the offset from UTC in minutes [-1080, 1080].
+the nanosecond [0, 999_999_999]. The optional parameter I<offset> specifies 
+the time zone offset from UTC in minutes [-1080, 1080].
 
 =head2 from_object
 
     $tm = Time::Moment->from_object($object);
+
+Constructs an instance of C<Time::Moment> from the given I<object>. If the 
+given object is an instance of C<Time::Moment> it's returned otherwise an 
+attempt is made to coerce the given object to an instance of C<Time::Moment>.
+
+C<Time::Moment> provides coercion handlers for the following object types:
+
+=over 4
+
+=item L<DateTime>
+
+    $tm = Time::Moment->from_object( DateTime->now );
+    $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
+
+The given C<DateTime> object must be within the supported date range and must 
+have a time zone or a time zone offset from UTC, coercing from the 'floating' 
+time zone is not supported.
+
+=item L<Time::Piece>
+
+    $tm = Time::Moment->from_object( Time::Piece::localtime() );
+    $tm = Params::Coerce::coerce('Time::Moment', Time::Piece::localtime());
+
+The given C<Time::Piece> object must be within the supported date range.
+
+=back
+
+The coercion scheme is extensible and implemented as documented in 
+L<Params::Coerce>.
 
 =head2 from_string
 
@@ -97,8 +133,8 @@ specifies the offset from UTC in minutes [-1080, 1080].
 
 Constructs an instance of C<Time::Moment> from the given I<string>. The string 
 must consist of a complete representation of a date and time of day followed 
-by a zone designator. The second part of the time of day may have a decimal 
-fraction.
+by a zone designator. The second part of the time of day representation may 
+have a decimal fraction.
 
 The following are examples of complete representations of date and time of day 
 representations:
@@ -115,6 +151,8 @@ representations:
 
 Where complete representations using calendar dates are shown, ordinal dates or 
 week dates may be substituted.
+
+=head1 METHODS
 
 =head2 year
 
@@ -168,37 +206,37 @@ Returns the day of the week [1=Monday, 7=Sunday].
 
     $hour = $tm->hour;
 
-Returns the hour of day [0, 23].
+Returns the hour of the day [0, 23].
 
 =head2 minute
 
     $minute = $tm->minute;
 
-Returns the minute of hour [0, 59].
+Returns the minute of the hour [0, 59].
 
 =head2 second
 
     $second = $tm->second;
 
-Returns the second of minute [0, 59].
+Returns the second of the minute [0, 59].
 
 =head2 millisecond
 
     $millisecond = $tm->millisecond;
 
-Returns the milli of second [0, 999].
+Returns the millisecond of the second [0, 999].
 
 =head2 microsecond
 
     $microsecond = $tm->microsecond;
 
-Returns the micro of second [0, 999_999].
+Returns the microsecond of the second [0, 999_999].
 
 =head2 nanosecond
 
     $nanosecond = $tm->nanosecond;
 
-Returns the nano of second [0, 999_999_999].
+Returns the nanosecond of the second [0, 999_999_999].
 
 =head2 epoch
 
@@ -210,14 +248,14 @@ Returns the number of seconds from the epoch of 1970-01-01T00:00:00Z.
 
     $offset = $tm->offset;
 
-Returns the offset from UTC in minutes [-1080, 1080].
+Returns the time zone offset from UTC in minutes [-1080, 1080].
 
 =head2 with_offset
 
     $tm2 = $tm1->with_offset($offset);
 
-Returns a copy of this time with the given I<offset> altered. The resulting 
-time is at the same instant.
+Returns a copy of this time with the given time zone I<offset> from UTC 
+in minutes altered. The resulting time is at the same instant.
 
 =head2 with_nanosecond
 
@@ -281,7 +319,7 @@ to be zero.
 
     $string = $tm->strftime($format);
 
-Formats time according to the conversion specifications in the given format 
+Formats time according to the conversion specifications in the given C<$format>
 string. The format string consists of zero or more conversion specifications 
 and ordinary characters. All ordinary characters are copied directly into the 
 resulting string. A conversion specification consists of a percent sign C<%> 
@@ -336,17 +374,28 @@ a single digit is preceded by a space.
 
 =item C<%f>
 
-Replaced by the fractional second including preceding decimal point or by 
-an empty string if no fractional second exists.
+Replaced by the fractional second including the preceding decimal point or by 
+an empty string if no fractional seconds are present. This conversion 
+specification permits use of an optional maximum field width [0, 9] where the 
+default field width of 0 will use the shortest representation.
+
+Example:
+
+C<%f> or C<%0f> is replaced by one of the following if fractional seconds are 
+present (shortest representation):
 
     .fff        (millisecond)
     .ffffff     (microsecond)
     .fffffffff  (nanosecond)
 
-The shortest representation is used.
+C<%4f> is replaced by decimal point and exactly four fractional digits 
+(zero-padded on the right or truncated if needed) if fractional seconds 
+are present:
 
-I<Please note that this this conversion specification is an extension to the 
-L<"IEEE Std 1003.1, 2013 Edition"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
+    .ffff
+
+I<This conversion specification is an extension to the 
+L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
 
 =item C<%F>
 
@@ -357,21 +406,41 @@ Equivalent to C<"%Y-%m-%d">.
 Replaced by the last 2 digits of the year of the week as a decimal 
 number [00, 99].
 
+=item C<%G>
+
+Replaced by the week-based year as a decimal number [0001, 9999].
+
 =item C<%h>
 
 Equivalent to C<%b>.
 
 =item C<%H>
 
-Replaced by the hour (24-hour clock) as a decimal number [00, 23].
+Replaced by the hour of day (24-hour clock) as a decimal number [00, 23].
 
 =item C<%I>
 
-Replaced by the hour (12-hour clock) as a decimal number [01, 12].
+Replaced by the hour of day (12-hour clock) as a decimal number [01, 12].
 
 =item C<%j>
 
 Replaced by the day of the year as a decimal number [001, 366].
+
+=item C<%k>
+
+Replaced by the hour of day (24-hour clock) as a decimal number [1, 23]; 
+a single digit is preceded by a space.
+
+I<This conversion specification is an extension to the 
+L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
+
+=item C<%l>
+
+Replaced by the hour (12-hour clock) as a decimal number [1, 12]; 
+a single digit is preceded by a space.
+
+I<This conversion specification is an extension to the 
+L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
 
 =item C<%m>
 
@@ -379,7 +448,7 @@ Replaced by the month of the year as a decimal number [01, 12].
 
 =item C<%M>
 
-Replaced by the minute as a decimal number [00, 59].
+Replaced by the minute of hour as a decimal number [00, 59].
 
 =item C<%n>
 
@@ -388,8 +457,8 @@ Replaced by a <newline> character.
 =item C<%N>
 
 Replaced by the fractional second as a decimal number. This conversion 
-specification permits use of a optional width flag where the default width 
-of C<0> will use the shortest representation.
+specification permits use of an optional maximum field width [0, 9] where 
+the default field width of 0 will use the shortest representation.
 
 Example: 
 
@@ -399,13 +468,13 @@ C<%N> or C<%0N> is replaced by one of the following (shortest representation):
     ffffff     (microsecond)
     fffffffff  (nanosecond)
 
-C<%N4> is replaced by exactly four fractional digits, zero padded or truncated
-if needed.
+C<%N4> is replaced by exactly four fractional digits (zero-padded on the 
+right or truncated if needed):
 
     ffff
 
-I<Please note that this this conversion specification is an extension to the 
-L<"IEEE Std 1003.1, 2013 Edition"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
+I<This conversion specification is an extension to the 
+L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
 
 =item C<%p>
 
@@ -422,11 +491,15 @@ Replaced by the time in 24-hour notation. Equivalent to C<"%H:%M">.
 
 =item C<%s>
 
-Replaced by the number of seconds from the epoch of 1970-01-01T00:00:00Z.
+Replaced by the number of seconds from the epoch of 1970-01-01T00:00:00Z 
+as a decimal number.
+
+I<This conversion specification is an extension to the 
+L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
 
 =item C<%S>
 
-Replaced by the second as a decimal number [00, 60].
+Replaced by the second of hour as a decimal number [00, 60].
 
 =item C<%t>
 
@@ -463,11 +536,11 @@ before this are in week 0.
 
 =item C<%x>
 
-Replaced by the C locale's date representation. Equivalent to C<"%D">.
+Replaced by the C locale's date representation. Equivalent to C<"%m/%d/%y">.
 
 =item C<%X>
 
-Replaced by the C locale's time representation. Equivalent to C<"%T">.
+Replaced by the C locale's time representation. Equivalent to C<"%H:%M:%S">.
 
 =item C<%y>
 
@@ -483,7 +556,7 @@ Replaced by the offset from UTC in the ISO 8601 basic format (±hhmm).
 
 =item C<%Z>
 
-Replaced by the offset from UTC in the ISO 8601 extended format or with UTC 
+Replaced by the offset from UTC in the ISO 8601 extended format or by UTC 
 designator (±hh:mm or Z).
 
 =item C<%%>
@@ -502,15 +575,15 @@ Returns a list of three elements:
 
 =item C<$rd>
 
-    The number of days from the Rata Die epoch of 0001-01-01.
+The number of days from the Rata Die epoch of 0001-01-01.
 
 =item C<$sod>
 
-    The second of the day [0, 86_399].
+The second of the day [0, 86_399].
 
 =item C<$nanosecond>
 
-    The nano of the second [0, 999_999_999].
+The nano of the second [0, 999_999_999].
 
 =back
 
@@ -530,15 +603,15 @@ Returns a list of three elements:
 
 =item C<$rd>
 
-    The number of days from the Rata Die epoch of 0001-01-01.
+The number of days from the Rata Die epoch of 0001-01-01.
 
 =item C<$sod>
 
-    The second of the day [0, 86_399].
+The second of the day [0, 86_399].
 
 =item C<$nanosecond>
 
-    The nano of the second [0, 999_999_999].
+The nano of the second [0, 999_999_999].
 
 =back
 
@@ -548,6 +621,55 @@ Returns a list of three elements:
 
 Returns the number of seconds from the Rata Die epoch of 0001-01-01T00:00:00.
 
+=head1 OVERLOADED OPERATORS
+
+=head2 stringification
+
+    $string = "$tm";
+
+The C<$string> will be in one of the following formats:
+
+    YYYY-MM-DDThh:mm:ss
+    YYYY-MM-DDThh:mm:ss.fff
+    YYYY-MM-DDThh:mm:ss.ffffff
+    YYYY-MM-DDThh:mm:ss.fffffffff
+
+Followed by a zone designator in one of the following formats:
+
+    Z
+    ±hh:mm
+
+The shortest representation will be used. This format is compatible with 
+ISO 8601 profiles, such as:
+
+=over 4
+
+=item * L<RFC 3339 Date and Time on the Internet: Timestamps|http://tools.ietf.org/html/rfc3339>
+
+=item * L<RFC 4287 The Atom Syndication Format|http://tools.ietf.org/html/rfc4287#section-3.3>
+
+=item * L<W3C Date and Time Formats|http://www.w3.org/TR/NOTE-datetime>
+
+=item * L<HTML5|http://www.w3.org/TR/html5/infrastructure.html#global-dates-and-times>
+
+=item * L<XML Schema|http://www.w3.org/TR/xmlschema-2/#dateTime>
+
+=back
+
+The format string C<"%FT%T%f%Z"> produces an equivalent string representation 
+using C<strftime>.
+
+    "$tm" eq $tm->strftime("%FT%T%f%Z");
+
+=head2 comparison
+
+    $boolean = $tm1 == $tm2;
+    $boolean = $tm1 != $tm2;
+    $boolean = $tm1 <  $tm2;
+    $boolean = $tm1 >  $tm2;
+    $boolean = $tm1 <= $tm2;
+    $boolean = $tm1 >= $tm2;
+
 =head1 DIAGNOSTICS
 
 =over 4
@@ -555,6 +677,23 @@ Returns the number of seconds from the Rata Die epoch of 0001-01-01T00:00:00.
 =item B<(F)> Usage: %s
 
 Method called with wrong number of arguments.
+
+=item B<(F)> Parameter 'seconds' is out of supported range
+
+Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the range:
+
+    [ -62135596800 (0001-01-01T00:00:00Z),
+      253402300799 (9999-12-31T23:59:59Z) ]
+
+=item B<(F)> Parameter 'nanosecond' is out of the range [0, 999_999_999]
+
+=item B<(F)> Parameter 'offset' is out of the range [-1080, 1080]
+
+=item B<(F)> Cannot coerce object of type %s to Time::Moment
+
+=item B<(F)> Cannot parse the given string
+
+=item B<(F)> A %s object can only be compared to another %s object ('%s', '%s')
 
 =back
 
