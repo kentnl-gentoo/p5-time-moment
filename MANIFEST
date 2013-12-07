@@ -2,7 +2,9 @@
 Changes
 dev/bench.pl
 dev/sizeof.pl
+eg/cbor.pl
 eg/clocks.pl
+eg/json.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm

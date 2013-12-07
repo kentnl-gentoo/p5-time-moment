@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.09';
+    our $VERSION = '0.10';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -67,7 +67,34 @@ sub DateTime::__as_Time_Moment {
 
 sub Time::Piece::__as_Time_Moment {
     my ($tp) = @_;
-    return Time::Moment->from_epoch($tp->epoch, 0, int($tp->tzoffset / 60));
+    return Time::Moment->from_epoch($tp->epoch)
+                       ->with_offset(int($tp->tzoffset / 60));
+}
+
+sub STORABLE_freeze {
+    my ($self, $cloning) = @_;
+    return if $cloning;
+    return pack 'nnNNN', 0x544D, $self->offset, $self->utc_rd_values;
+}
+
+sub STORABLE_thaw {
+    my ($self, $cloning, $packed) = @_;
+    return if $cloning;
+    (length($packed) == 16 && vec($packed, 0, 16) == 0x544D) # TM
+      or die(q/Cannot deserialize corrupted data/); # Don't replace die with Carp!
+    my ($offset, $rdn, $sod, $nos) = unpack 'xxnNNN', $packed;
+    my $seconds = ($rdn - 719163) * 86400 + $sod;
+    $$self = ${ ref($self)->from_epoch($seconds, $nos, $offset) };
+}
+
+sub TO_JSON {
+    return $_[0]->to_string;
+}
+
+sub TO_CBOR {
+    my ($self) = @_;
+    # Use the standard tag for date/time string; see RFC 7049 Section 2.4.1
+    return CBOR::XS::tag(0, $_[0]->to_string);
 }
 
 1;

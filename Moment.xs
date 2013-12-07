@@ -114,19 +114,27 @@ THX_newSVmoment(pTHX_ const moment_t *m, HV *stash) {
     SV *pv = newSVpvn((const char *)m, sizeof(moment_t));
     SV *sv = newRV_noinc(pv);
     sv_bless(sv, stash);
-    SvREADONLY_on(pv);
+    return sv;
+}
+
+static SV *
+THX_sv_set_moment(pTHX_ SV *sv, const moment_t *m) {
+    if (!SvROK(sv))
+        croak("panic: sv_set_moment called with nonreference");
+    sv_setpvn_mg(SvRV(sv), (const char *)m, sizeof(moment_t));
+    SvTEMP_off(sv);
     return sv;
 }
 
 static bool
-THX_sv_isa_stash(pTHX_ SV *sv, const char *klass, HV *stash) {
+THX_sv_isa_stash(pTHX_ SV *sv, const char *klass, HV *stash, size_t size) {
     SV *rv;
 
     SvGETMAGIC(sv);
     if (!SvROK(sv))
         return FALSE;
     rv = SvRV(sv);
-    if (!(SvOBJECT(rv) && SvSTASH(rv) && SvPOKp(rv)))
+    if (!(SvOBJECT(rv) && SvSTASH(rv) && SvPOKp(rv) && SvCUR(rv) == size))
         return FALSE;
     if (!(SvSTASH(rv) == stash || sv_derived_from(sv, klass)))
         return FALSE;
@@ -153,7 +161,7 @@ THX_stash_constructor(pTHX_ SV *sv, const char *name, STRLEN namelen, HV *stash)
 static bool
 THX_sv_isa_moment(pTHX_ SV *sv) {
     dMY_CXT;
-    return THX_sv_isa_stash(aTHX_ sv, "Time::Moment", MY_CXT.stash);
+    return THX_sv_isa_stash(aTHX_ sv, "Time::Moment", MY_CXT.stash, sizeof(moment_t));
 }
 
 static moment_t *
@@ -192,6 +200,9 @@ THX_sv_2moment_coerce_sv(pTHX_ SV *sv) {
 
 #define newSVmoment(m, stash) \
     THX_newSVmoment(aTHX_ m, stash)
+
+#define sv_set_moment(sv, m) \
+    THX_sv_set_moment(aTHX_ sv, m);
 
 #define sv_2moment_ptr(sv, name) \
     THX_sv_2moment_ptr(aTHX_ sv, name)
@@ -318,13 +329,25 @@ now(klass)
 moment_t 
 from_epoch(klass, seconds, nanosecond=0, offset=0)
     SV *klass
-    I64V seconds
+    SV *seconds
     IV nanosecond
     IV offset
   PREINIT:
     dSTASH_CONSTRUCTOR_MOMENT(klass);
+    int64_t secs;
+    NV frac;
   CODE:
-    RETVAL = moment_from_epoch(seconds, nanosecond, offset);
+    if (items != 2 || SvIOK(seconds))
+        secs = SvI64V(seconds);
+    else {
+        frac = SvNV(seconds);
+        secs = (int64_t)frac;
+        frac = frac - (NV)secs;
+        if (frac < 0)
+            frac = -frac;
+        nanosecond = (IV)(frac * 1E9 + 0.5);
+    }
+    RETVAL = moment_from_epoch(secs, nanosecond, offset);
   OUTPUT:
     RETVAL
 
@@ -361,6 +384,10 @@ with_offset(self, offset)
     if (offset == moment_offset(self))
         XSRETURN(1);
     RETVAL = moment_with_offset(self, offset);
+    if (SvTEMP(ST(0))) {
+        sv_set_moment(ST(0), &RETVAL);
+        XSRETURN(1);
+    }
   OUTPUT:
     RETVAL
 
@@ -374,6 +401,10 @@ with_nanosecond(self, nanosecond)
     if (nanosecond == moment_nanosecond(self))
         XSRETURN(1);
     RETVAL = moment_with_nanosecond(self, nanosecond);
+    if (SvTEMP(ST(0))) {
+        sv_set_moment(ST(0), &RETVAL);
+        XSRETURN(1);
+    }
   OUTPUT:
     RETVAL
 
@@ -497,8 +528,9 @@ strftime(self, format)
     XSRETURN_SV(ret);
 
 void
-to_string(self)
+to_string(self, reduced=FALSE)
     const moment_t *self
+    bool reduced
   PPCODE:
-    XSRETURN_SV(moment_to_string(self, TRUE));
+    XSRETURN_SV(moment_to_string(self, reduced));
 

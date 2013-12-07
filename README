@@ -82,9 +82,14 @@ CONSTRUCTORS
 
     Constructs an instance of "Time::Moment" from the given *seconds* from
     the epoch of 1970-01-01T00:00:00Z. The optional parameter *nanosecond*
-    specifies the nanosecond [0, 999_999_999]. The optional parameter
-    *offset* specifies the time zone offset from UTC in minutes [-1080,
-    1080].
+    specifies the nanosecond of the second [0, 999_999_999]. The optional
+    parameter *offset* specifies the time zone offset from UTC in minutes
+    [-1080, 1080].
+
+    Fractional seconds is supported if the constructor is invoked with
+    *seconds* only:
+
+        $tm = Time::Moment->from_epoch(0.123456); # 1970-01-01T00:00:00.123456Z
 
   from_object
         $tm = Time::Moment->from_object($object);
@@ -94,12 +99,11 @@ CONSTRUCTORS
     attempt is made to coerce the given object to an instance of
     "Time::Moment".
 
-    "Time::Moment" provides coercion handlers for the following object
+    "Time::Moment" implements coercion handlers for the following object
     types:
 
     DateTime
             $tm = Time::Moment->from_object( DateTime->now );
-            $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
 
         The given "DateTime" object must be within the supported date range
         and must have a time zone or a time zone offset from UTC, coercing
@@ -107,13 +111,20 @@ CONSTRUCTORS
 
     Time::Piece
             $tm = Time::Moment->from_object( Time::Piece::localtime() );
-            $tm = Params::Coerce::coerce('Time::Moment', Time::Piece::localtime());
 
         The given "Time::Piece" object must be within the supported date
         range.
 
     The coercion scheme is extensible and implemented as documented in
-    Params::Coerce.
+    Params::Coerce:
+
+        $tm = Params::Coerce::coerce('Time::Moment', Time::Piece::localtime());
+        $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
+
+    "Time::Moment" implements coercion handler from "Time::Moment" to
+    "DateTime":
+
+        $dt = Params::Coerce::coerce('DateTime', Time::Moment->now);
 
   from_string
         $tm = Time::Moment->from_string($string);
@@ -259,20 +270,23 @@ METHODS
 
   to_string
         $string = $tm->to_string;
+        $string = $tm->to_string($reduced);
 
-    Returns a string representation of the instance in one of the following
-    formats:
+    Returns a string representation of the instance. If the optional boolean
+    parameter *reduced* is true a shorter representation is attempted.
 
-        YYYY-MM-DDThh:mm
+    The string will be in one of the following representations:
+
+        YYYY-MM-DDThh:mm                (only if $reduced = true)
         YYYY-MM-DDThh:mm:ss
         YYYY-MM-DDThh:mm:ss.fff
         YYYY-MM-DDThh:mm:ss.ffffff
         YYYY-MM-DDThh:mm:ss.fffffffff
 
-    Followed by a zone designator in one of the following formats:
+    Followed by a zone designator in one of the following representations:
 
         Z
-        ±hh
+        ±hh                             (only if $reduced = true)
         ±hh:mm
 
     The shortest representation will be used where the omitted parts are
@@ -365,8 +379,8 @@ METHODS
         <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
         html>*.
 
-    %l  Replaced by the hour (12-hour clock) as a decimal number [1, 12]; a
-        single digit is preceded by a space.
+    %l  Replaced by the hour of day (12-hour clock) as a decimal number [1,
+        12]; a single digit is preceded by a space.
 
         *This conversion specification is an extension to the "IEEE Std
         1003.1"
@@ -504,7 +518,7 @@ OVERLOADED OPERATORS
   stringification
         $string = "$tm";
 
-    The $string will be in one of the following formats:
+    The $string will be in one of the following representations:
 
         YYYY-MM-DDThh:mm:ss
         YYYY-MM-DDThh:mm:ss.fff
@@ -516,8 +530,8 @@ OVERLOADED OPERATORS
         Z
         ±hh:mm
 
-    The shortest representation will be used. This format is compatible with
-    ISO 8601 profiles, such as:
+    The shortest representation will be used. This representation is
+    conformant with ISO 8601 profiles, such as:
 
     *   RFC 3339 Date and Time on the Internet: Timestamps
         <http://tools.ietf.org/html/rfc3339>
@@ -533,9 +547,10 @@ OVERLOADED OPERATORS
 
     *   XML Schema <http://www.w3.org/TR/xmlschema-2/#dateTime>
 
-    The format string "%FT%T%f%Z" produces an equivalent string
-    representation using "strftime".
+    The "to_string" method or the "strftime" format string "%FT%T%f%Z"
+    produces an equivalent string representation:
 
+        "$tm" eq $tm->to_string;
         "$tm" eq $tm->strftime("%FT%T%f%Z");
 
   comparison
@@ -545,6 +560,29 @@ OVERLOADED OPERATORS
         $boolean = $tm1 >  $tm2;
         $boolean = $tm1 <= $tm2;
         $boolean = $tm1 >= $tm2;
+
+SERIALIZATION
+  Storable
+    The serialized representation of a "Time::Moment" is a string of 16
+    bytes that contains the MAGIC (2 bytes), time zone offset from UTC (2
+    bytes), the number of days from Rata Die (4 bytes), second of the day (4
+    bytes) followed by nanosecond of the second (4 bytes).
+
+    The total size of the serialized "Time::Moment" instance using "nfreeze"
+    is 30 bytes.
+
+  JSON
+    "Time::Moment" implements a "TO_JSON" method that returns the
+    stringified representation of the instance.
+
+  CBOR
+    "Time::Moment" implements a "TO_CBOR" method that stores the stringified
+    representation of the instance as a *standard date/time string* using
+    tag 0.
+
+    See CBOR::XS, RFC 7049 Section 2.4.1
+    <http://tools.ietf.org/html/rfc7049#section-2.4.1> and "eg/cbor.pl" for
+    an example how to roundtrip instances of "Time::Moment".
 
 DIAGNOSTICS
     (F) Usage: %s
