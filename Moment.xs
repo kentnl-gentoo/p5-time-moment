@@ -327,11 +327,10 @@ now(klass)
 #endif
 
 moment_t 
-from_epoch(klass, seconds, nanosecond=0, offset=0)
+from_epoch(klass, seconds, nanosecond=0)
     SV *klass
     SV *seconds
     IV nanosecond
-    IV offset
   PREINIT:
     dSTASH_CONSTRUCTOR_MOMENT(klass);
     int64_t secs;
@@ -347,7 +346,7 @@ from_epoch(klass, seconds, nanosecond=0, offset=0)
             frac = -frac;
         nanosecond = (IV)(frac * 1E9 + 0.5);
     }
-    RETVAL = moment_from_epoch(secs, nanosecond, offset);
+    RETVAL = moment_from_epoch(secs, nanosecond, 0);
   OUTPUT:
     RETVAL
 
@@ -371,19 +370,19 @@ from_object(klass, object)
     SV *object
   PREINIT:
     dSTASH_CONSTRUCTOR_MOMENT(klass);
+    PERL_UNUSED_VAR(stash);
   CODE:
     XSRETURN_SV(sv_2moment_coerce_sv(object));
 
 moment_t
-with_offset(self, offset)
+at_utc(self)
     const moment_t *self
-    IV offset
   PREINIT:
     dSTASH_INVOCANT;
   CODE:
-    if (offset == moment_offset(self))
+    if (0 == moment_offset(self))
         XSRETURN(1);
-    RETVAL = moment_with_offset(self, offset);
+    RETVAL = moment_with_offset(self, 0);
     if (SvTEMP(ST(0))) {
         sv_set_moment(ST(0), &RETVAL);
         XSRETURN(1);
@@ -392,15 +391,77 @@ with_offset(self, offset)
     RETVAL
 
 moment_t
-with_nanosecond(self, nanosecond)
+plus_seconds(self, value)
     const moment_t *self
-    IV nanosecond
+    I64V value
   PREINIT:
     dSTASH_INVOCANT;
+  ALIAS:
+    Time::Moment::plus_years       =  MOMENT_UNIT_YEARS
+    Time::Moment::plus_months      =  MOMENT_UNIT_MONTHS
+    Time::Moment::plus_weeks       =  MOMENT_UNIT_WEEKS
+    Time::Moment::plus_days        =  MOMENT_UNIT_DAYS
+    Time::Moment::plus_hours       =  MOMENT_UNIT_HOURS
+    Time::Moment::plus_minutes     =  MOMENT_UNIT_MINUTES
+    Time::Moment::plus_seconds     =  MOMENT_UNIT_SECONDS
+    Time::Moment::plus_nanoseconds =  MOMENT_UNIT_NANOSECONDS
   CODE:
-    if (nanosecond == moment_nanosecond(self))
+    if (value == 0)
         XSRETURN(1);
-    RETVAL = moment_with_nanosecond(self, nanosecond);
+    RETVAL = moment_plus_unit(self, (moment_unit_t)ix, value);
+    if (SvTEMP(ST(0))) {
+        sv_set_moment(ST(0), &RETVAL);
+        XSRETURN(1);
+    }
+  OUTPUT:
+    RETVAL
+
+moment_t
+minus_seconds(self, value)
+    const moment_t *self
+    I64V value
+  PREINIT:
+    dSTASH_INVOCANT;
+  ALIAS:
+    Time::Moment::minus_years       =  MOMENT_UNIT_YEARS
+    Time::Moment::minus_months      =  MOMENT_UNIT_MONTHS
+    Time::Moment::minus_weeks       =  MOMENT_UNIT_WEEKS
+    Time::Moment::minus_days        =  MOMENT_UNIT_DAYS
+    Time::Moment::minus_hours       =  MOMENT_UNIT_HOURS
+    Time::Moment::minus_minutes     =  MOMENT_UNIT_MINUTES
+    Time::Moment::minus_seconds     =  MOMENT_UNIT_SECONDS
+    Time::Moment::minus_nanoseconds =  MOMENT_UNIT_NANOSECONDS
+  CODE:
+    if (value == 0)
+        XSRETURN(1);
+    RETVAL = moment_minus_unit(self, (moment_unit_t)ix, value);
+    if (SvTEMP(ST(0))) {
+        sv_set_moment(ST(0), &RETVAL);
+        XSRETURN(1);
+    }
+  OUTPUT:
+    RETVAL
+
+moment_t
+with_year(self, value)
+    const moment_t *self
+    IV value
+  PREINIT:
+    dSTASH_INVOCANT;
+  ALIAS:
+    Time::Moment::with_year         =  MOMENT_COMPONENT_YEAR
+    Time::Moment::with_month        =  MOMENT_COMPONENT_MONTH
+    Time::Moment::with_day_of_year  =  MOMENT_COMPONENT_DAY_OF_YEAR
+    Time::Moment::with_day_of_month =  MOMENT_COMPONENT_DAY_OF_MONTH
+    Time::Moment::with_hour         =  MOMENT_COMPONENT_HOUR
+    Time::Moment::with_minute       =  MOMENT_COMPONENT_MINUTE
+    Time::Moment::with_second       =  MOMENT_COMPONENT_SECOND
+    Time::Moment::with_nanosecond   =  MOMENT_COMPONENT_NANOSECOND
+    Time::Moment::with_offset       =  MOMENT_COMPONENT_OFFSET
+  CODE:
+    RETVAL = moment_with_component(self, (moment_component_t)ix, value);
+    if (moment_compare_local(self, &RETVAL) == 0)
+        XSRETURN(1);
     if (SvTEMP(ST(0))) {
         sv_set_moment(ST(0), &RETVAL);
         XSRETURN(1);

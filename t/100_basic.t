@@ -75,6 +75,7 @@ my @tests = (
                              "Y"  => "1970",
                              "y"  => "70",
                              "z"  => "+0000",
+                             ":z" => "+00:00",
                              "Z"  => "Z",
                            },
     string              => "1970-01-01T00:00:00Z",
@@ -149,6 +150,7 @@ my @tests = (
                              "Y"  => "2013",
                              "y"  => "13",
                              "z"  => "+0412",
+                             ":z" => "+04:12",
                              "Z"  => "+04:12",
                            },
     string              => "2013-12-21T13:00:14.426347+04:12",
@@ -218,7 +220,7 @@ my @tests = (
                              "X"  => "12:58:57",
                              "Y"  => "2099",
                              "y"  => "99",
-                             "z"  => "-1400",
+                             ":z" => "-14:00",
                              "Z"  => "-14:00",
                            },
     string              => "2099-09-04T12:58:57.091592-14:00",
@@ -238,7 +240,9 @@ my @Accessors = qw(
 foreach my $test (@tests) {
     my $name = $test->{string};
 
-    my $tm = Time::Moment->from_epoch(@$test{qw(epoch nanosecond offset)});
+    my $tm = Time::Moment->from_epoch(@$test{qw(epoch nanosecond)})
+                         ->with_offset($test->{offset});
+
     foreach my $accessor (@Accessors) {
         is($tm->$accessor, $test->{$accessor}, "${name} ->${accessor}");
     }

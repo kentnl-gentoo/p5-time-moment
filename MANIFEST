@@ -28,6 +28,8 @@ ppport.h
 README
 src/dt_accessor.c
 src/dt_accessor.h
+src/dt_arithmetic.c
+src/dt_arithmetic.h
 src/dt_config.h
 src/dt_core.c
 src/dt_core.h
@@ -47,4 +49,6 @@ t/000_load.t
 t/100_basic.t
 t/200_compare.t
 t/300_parse.t
+t/400_with.t
+t/600_coerce.t
 typemap
