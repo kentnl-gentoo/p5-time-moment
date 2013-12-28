@@ -7,6 +7,19 @@
 #include "moment_fmt.h"
 #include "moment_parse.h"
 
+typedef enum {
+    MOMENT_PARAM_UNKNOWN=0,
+    MOMENT_PARAM_YEAR,
+    MOMENT_PARAM_MONTH,
+    MOMENT_PARAM_DAY,
+    MOMENT_PARAM_HOUR,
+    MOMENT_PARAM_MINUTE,
+    MOMENT_PARAM_SECOND,
+    MOMENT_PARAM_NANOSECOND,
+    MOMENT_PARAM_OFFSET,
+    MOMENT_PARAM_LENIENT,
+} moment_param_t;
+
 typedef int64_t I64V;
 
 #if IVSIZE >= 8
@@ -53,6 +66,43 @@ START_MY_CXT
 static void
 setup_my_cxt(pTHX_ pMY_CXT) {
     MY_CXT.stash = gv_stashpvs("Time::Moment", GV_ADD);
+}
+
+static moment_param_t
+moment_param(const char *s, const STRLEN len) {
+    switch (len) {
+        case 3:
+            if (memEQ(s, "day", 3))
+                return MOMENT_PARAM_DAY;
+            break;
+        case 4:
+            if (memEQ(s, "year", 4))
+                return MOMENT_PARAM_YEAR;
+            if (memEQ(s, "hour", 4))
+                return MOMENT_PARAM_HOUR;
+            break;
+        case 5:
+            if (memEQ(s, "month", 5))
+                return MOMENT_PARAM_MONTH;
+            break;
+        case 6:
+            if (memEQ(s, "minute", 6))
+                return MOMENT_PARAM_MINUTE;
+            if (memEQ(s, "second", 6))
+                return MOMENT_PARAM_SECOND;
+            if (memEQ(s, "offset", 6))
+                return MOMENT_PARAM_OFFSET;
+            break;
+        case 7:
+            if (memEQ(s, "lenient", 7))
+                return MOMENT_PARAM_LENIENT;
+            break;
+        case 10:
+            if (memEQ(s, "nanosecond", 10))
+                return MOMENT_PARAM_NANOSECOND;
+            break;
+    }
+    return MOMENT_PARAM_UNKNOWN;
 }
 
 static SV *
@@ -309,6 +359,38 @@ CODE:
 
 #endif
 
+moment_t 
+new(klass, ...)
+    SV *klass
+  PREINIT:
+    dSTASH_CONSTRUCTOR_MOMENT(klass);
+    IV year = 1, month = 1, day = 1;
+    IV hour = 0, minute = 0, second = 0, ns = 0, offset = 0;
+    I32 i;
+    STRLEN len;
+    const char *str;
+  CODE:
+    if (((items - 1) % 2) != 0)
+        croak("Odd number of elements in call to constructor when named parameters were expected");
+
+    for (i = 1; i < items; i += 2) {
+        str = SvPV_const(ST(i), len);
+        switch (moment_param(str, len)) {
+            case MOMENT_PARAM_YEAR:        year   = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_MONTH:       month  = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_DAY:         day    = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_HOUR:        hour   = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_MINUTE:      minute = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_SECOND:      second = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_NANOSECOND:  ns     = SvIV(ST(i+1)); break;
+            case MOMENT_PARAM_OFFSET:      offset = SvIV(ST(i+1)); break;
+            default: croak("Unrecognised parameter: '%s'", str);
+        }
+    }
+    RETVAL = moment_new(year, month, day, hour, minute, second, ns, offset);
+  OUTPUT:
+    RETVAL
+
 #ifdef HAS_GETTIMEOFDAY
 
 moment_t
@@ -351,16 +433,32 @@ from_epoch(klass, seconds, nanosecond=0)
     RETVAL
 
 moment_t
-from_string(klass, string)
+from_string(klass, string, ...)
     SV *klass
     SV *string
   PREINIT:
     dSTASH_CONSTRUCTOR_MOMENT(klass);
+    bool lenient;
     STRLEN len;
     const char *str;
+    I32 i;
   CODE:
+    if ((items % 2) != 0)
+        croak("Odd number of elements in named parameters");
+
+    lenient = FALSE;
+    for (i = 2; i < items; i += 2) {
+        str = SvPV_const(ST(i), len);
+        switch (moment_param(str, len)) {
+            case MOMENT_PARAM_LENIENT:
+                lenient = cBOOL(SvTRUE((ST(i+1))));
+                break;
+            default: 
+                croak("Unrecognised parameter: '%s'", str);
+        }
+    }
     str = SvPV_const(string, len);
-    RETVAL = moment_from_string(str, len);
+    RETVAL = moment_from_string(str, len, lenient);
   OUTPUT:
     RETVAL
 

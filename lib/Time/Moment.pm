@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.11';
+    our $VERSION = '0.12';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -95,6 +95,16 @@ sub TO_JSON {
 sub TO_CBOR {
     # Use the standard tag for date/time string; see RFC 7049 Section 2.4.1
     return CBOR::XS::tag(0, $_[0]->to_string);
+}
+
+sub FREEZE {
+    my ($self, $serialiser) = @_;
+    return $self->to_string;
+}
+
+sub THAW {
+    my ($class, $serialiser, $string) = @_;
+    return $class->from_string($string);
 }
 
 1;

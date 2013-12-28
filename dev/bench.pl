@@ -9,7 +9,38 @@ use Time::Piece   qw[];
 use POSIX         qw[];
 
 {
-    print "Benchmarking constructor: ->now()\n";
+    print "Benchmarking constructor: ->new()\n";
+    my $zone = DateTime::TimeZone->new(name => 'UTC');
+    Benchmark::cmpthese( -10, {
+        'DateTime' => sub {
+            my $dt = DateTime->new(
+                year       => 2012,
+                month      => 12,
+                day        => 24,
+                hour       => 15,
+                minute     => 30,
+                second     => 45,
+                nanosecond => 123456789,
+                time_zone  => $zone,
+            );
+        },
+        'Time::Moment' => sub {
+            my $tm = Time::Moment->new(
+                year       => 2012,
+                month      => 12,
+                day        => 24,
+                hour       => 15,
+                minute     => 30,
+                second     => 45,
+                nanosecond => 123456789,
+                offset     => 0
+            );
+        },
+    });
+}
+
+{
+    print "\nBenchmarking constructor: ->now()\n";
     my $zone = DateTime::TimeZone->new(name => 'local');
     Benchmark::cmpthese( -10, {
         'DateTime' => sub {
@@ -132,6 +163,38 @@ use POSIX         qw[];
         },
         'POSIX::strftime' => sub {
             my $string = POSIX::strftime('%FT%T', @lt);
+        },
+    });
+}
+
+{
+    print "\nBenchmarking sort: 1000 instants\n";
+
+    my @epochs = map { 
+        int(rand(365.2425 * 50) * 86400 + rand(86400))
+    } (1..1000);
+
+    my @dt = map {
+        DateTime->from_epoch(epoch => $_)
+    } @epochs;
+
+    my @tm = map {
+        Time::Moment->from_epoch($_)
+    } @epochs;
+
+    my @tp = map {
+        scalar Time::Piece::gmtime($_);
+    } @epochs;
+
+    Benchmark::cmpthese( -10, {
+        'DateTime' => sub {
+            my @sorted = sort { $a->compare($b) } @dt;
+        },
+        'Time::Moment' => sub {
+            my @sorted = sort { $a->compare($b) } @tm;
+        },
+        'Time::Piece' => sub {
+            my @sorted = sort { $a->compare($b) } @tp;
         },
     });
 }

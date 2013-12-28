@@ -6,6 +6,16 @@ Time::Moment - Represents a date and time of day with an offset from UTC
 
 =head1 SYNOPSIS
     
+    $tm = Time::Moment->new(
+        year       => 2012,
+        month      => 12,
+        day        => 24,
+        hour       => 15,
+        minute     => 30,
+        second     => 45,
+        nanosecond => 123456789,
+        offset     => 0,
+    );
     $tm = Time::Moment->now;
     $tm = Time::Moment->now_utc;
     $tm = Time::Moment->from_epoch($seconds [, $nanosecond]);
@@ -104,6 +114,60 @@ C<0001-01-01T00:00:00Z> to C<9999-12-31T23:59:59Z>.
 
 =head1 CONSTRUCTORS
 
+=head2 new
+
+    $tm = Time::Moment->new(
+        year       => 2012,
+        month      => 12,
+        day        => 24,
+        hour       => 15,
+        minute     => 30,
+        second     => 45,
+        nanosecond => 123456789,
+        offset     => 0,
+    );
+
+Constructs an instance of C<Time::Moment> from the given components.
+
+B<Parameters:>
+
+=over 4
+
+=item year
+
+The year [1, 9999].
+
+=item month
+
+The month of the year [1, 12].
+
+=item day
+
+The day of the month [1, 31]. The day must be valid for the year and month, 
+otherwise an exception is raised.
+
+=item hour
+
+The hour of the day [0, 23].
+
+=item minute
+
+The minute of the hour [0, 59].
+
+=item second
+
+The second of the minute [0, 59].
+
+=item nanosecond
+
+The nanosecond of the second [0, 999_999_999].
+
+=item offset
+
+The time zone offset from UTC in minutes [-1080, 1080].
+
+=back
+
 =head2 now
 
     $tm = Time::Moment->now;
@@ -175,11 +239,14 @@ C<DateTime>:
 =head2 from_string
 
     $tm = Time::Moment->from_string($string);
+    $tm = Time::Moment->from_string($string [, lenient => false]);
 
 Constructs an instance of C<Time::Moment> from the given I<string>. The string 
 must consist of a complete date representation and time of day followed by a 
 time zone designator. The second part of the time of day may be omitted or 
-have a decimal fraction.
+have a decimal fraction. The decimal sign can be either the comma [,] or the 
+full stop [.]. A decimal fraction must have at least one digit and may have a 
+total of nine digits.
 
 The following are examples of complete date representations and time of day 
 representations:
@@ -211,9 +278,51 @@ representations:
     YYYY-MM-DDThh:mm±hh           2012-12-24T12:15+01       (reduced accuracy)
 
 Where representations using calendar dates are shown, ordinal dates or week 
-dates may be substituted.
+dates may be substituted. This ISO 8601 profile correspond to a subset of 
+ISO 8601:2004 4.3 Date and time of day.
 
-=head1 METHODS
+If the optional boolean parameter I<lenient> is true the following examples
+is also accepted where the date is a complete calendar date and time of day 
+in extended format:
+
+    YYYY-MM-DD hh:mm:ssZ          2012-12-24 12:15:30Z
+    YYYY-MM-DD hh:mm:ssz          2012-12-24 12:15:30z
+    YYYY-MM-DD hh:mm:ss±hhmm      2012-12-24 12:15:30+0100
+    YYYY-MM-DD hh:mm:ss±hh:mm     2012-12-24 12:15:30+01:00
+    YYYY-MM-DD hh:mm:ss±hh        2012-12-24 12:15:30+01
+    
+    YYYY-MM-DD hh:mm:ss.ssZ       2012-12-24 12:15:30.500Z
+    YYYY-MM-DD hh:mm:ss.ssz       2012-12-24 12:15:30.500z
+    YYYY-MM-DD hh:mm:ss.ss±hhmm   2012-12-24 12:15:30.500+0100
+    YYYY-MM-DD hh:mm:ss.ss±hh:mm  2012-12-24 12:15:30.500+01:00
+    YYYY-MM-DD hh:mm:ss.ss±hh     2012-12-24 12:15:30.500+01
+    
+    YYYY-MM-DD hh:mmZ             2012-12-24 12:15Z
+    YYYY-MM-DD hh:mmz             2012-12-24 12:15z
+    YYYY-MM-DD hh:mm±hhmm         2012-12-24 12:15+0100
+    YYYY-MM-DD hh:mm±hh:mm        2012-12-24 12:15+01:00
+    YYYY-MM-DD hh:mm±hh           2012-12-24 12:15+01
+    
+    YYYY-MM-DD hh:mm:ss ±hh:mm    2012-12-24 12:15:30 +01:00
+    YYYY-MM-DD hh:mm:ss ±hhmm     2012-12-24 12:15:30 +0100
+    YYYY-MM-DD hh:mm:ss ±hh       2012-12-24 12:15:30 +01
+    
+    YYYY-MM-DD hh:mm:ss.ss ±hhmm  2012-12-24 12:15:30.500 +0100
+    YYYY-MM-DD hh:mm:ss.ss ±hh:mm 2012-12-24 12:15:30.500 +01:00
+    YYYY-MM-DD hh:mm:ss.ss ±hh    2012-12-24 12:15:30.500 +01
+    
+    YYYY-MM-DD hh:mm ±hh:mm       2012-12-24 12:15 +01:00
+    YYYY-MM-DD hh:mm ±hhmm        2012-12-24 12:15 +0100
+    YYYY-MM-DD hh:mm ±hh          2012-12-24 12:15 +01
+
+The time designator [T] may be in lower case [t] or replaced with a single 
+space. A single space is also accepted between the time of day and the zone 
+designator if the time designator is replaced with a single space. The zone 
+designator may be in basic format even though the calendar date and time of 
+day is in extended format. The UTC designator [Z] may also be in lower case 
+[z].
+
+=head1 INSTANCE METHODS
 
 =head2 year
 
@@ -332,15 +441,16 @@ given month.
 
     $tm2 = $tm1->with_day_of_month($day);
 
-Returns a copy of this instance with the given I<day> of the month altered. 
-The day must be valid for the year and month, otherwise an exception is raised.
+Returns a copy of this instance with the given I<day> of the month [1, 31] 
+altered. The day must be valid for the year and month, otherwise an exception 
+is raised.
 
 =head2 with_day_of_year
 
     $tm2 = $tm1->with_day_of_year($day);
 
-Returns a copy of this instance with the given I<day> of the year altered. 
-The day must be valid for the year, otherwise an exception is raised.
+Returns a copy of this instance with the given I<day> of the year [1, 366] 
+altered. The day must be valid for the year, otherwise an exception is raised.
 
 =head2 with_hour
 
@@ -526,7 +636,7 @@ than zero if this time is after the other time.
 =head2 to_string
 
     $string = $tm->to_string;
-    $string = $tm->to_string($reduced);
+    $string = $tm->to_string($reduced = false);
 
 Returns a string representation of the instance. If the optional boolean 
 parameter I<reduced> is true a shorter representation is attempted.
@@ -607,25 +717,29 @@ a single digit is preceded by a space.
 
 =item C<%f>
 
-Replaced by the fractional second including the preceding decimal point or by 
-an empty string if no fractional seconds are present. This conversion 
-specification permits use of an optional maximum field width [0, 9] where the 
-default field width of 0 will use the shortest representation.
-
-Example:
-
-C<%f> or C<%0f> is replaced by one of the following if fractional seconds are 
-present (shortest representation):
+Replaced by the fractional second including the preceding decimal point or 
+by an empty string if no fractional seconds are present. This conversion 
+specification permits use of an optional maximum field width [0, 9] where 
+the default field width of 0 will use the shortest of the following 
+representations:
 
     .fff        (millisecond)
     .ffffff     (microsecond)
     .fffffffff  (nanosecond)
 
+Example:
+
+    $tm = Time::Moment->from_string('2012-12-24T15:30:45.123456Z');
+    $tm->strftime('%f');    # '.123456'
+    $tm->strftime('%4f');   # '.1234'
+    
+    $tm = Time::Moment->from_string('2012-12-24T15:30:45Z');
+    $tm->strftime('%f');    # ''
+    $tm->strftime('%4f');   # ''
+
 C<%4f> is replaced by decimal point and exactly four fractional digits 
 (zero-padded on the right or truncated if needed) if fractional seconds 
-are present:
-
-    .ffff
+are present.
 
 I<This conversion specification is an extension to the 
 L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
@@ -691,20 +805,21 @@ Replaced by a <newline> character.
 
 Replaced by the fractional second as a decimal number. This conversion 
 specification permits use of an optional maximum field width [0, 9] where 
-the default field width of 0 will use the shortest representation.
-
-Example: 
-
-C<%N> or C<%0N> is replaced by one of the following (shortest representation):
+the default field width of 0 will use the shortest of the following 
+representations:
 
     fff        (millisecond)
     ffffff     (microsecond)
     fffffffff  (nanosecond)
 
-C<%4N> is replaced by exactly four fractional digits (zero-padded on the 
-right or truncated if needed):
+Example:
 
-    ffff
+    $tm = Time::Moment->from_string('2012-12-24T15:30:45.123456Z');
+    $tm->strftime('%N');    # '123456'
+    $tm->strftime('%4N');   # '1234'
+
+C<%4N> is replaced by exactly four fractional digits (zero-padded on the 
+right or truncated if needed).
 
 I<This conversion specification is an extension to the 
 L<"IEEE Std 1003.1"|http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.html>>.
@@ -816,7 +931,7 @@ The second of the day [0, 86_399].
 
 =item C<$nanosecond>
 
-The nano of the second [0, 999_999_999].
+The nanosecond of the second [0, 999_999_999].
 
 =back
 
@@ -844,7 +959,7 @@ The second of the day [0, 86_399].
 
 =item C<$nanosecond>
 
-The nano of the second [0, 999_999_999].
+The nanosecond of the second [0, 999_999_999].
 
 =back
 
@@ -919,7 +1034,7 @@ of days from Rata Die (4 bytes), second of the day (4 bytes) and nanosecond of
 the second (4 bytes).
 
 The total size of the serialized C<Time::Moment> instance using C<nfreeze> is 
-30 bytes.
+34 bytes.
 
 =head2 JSON
 
@@ -934,9 +1049,15 @@ representation of the instance as a I<standard date/time string> using tag C<0>.
 See L<CBOR::XS>, L<RFC 7049 Section 2.4.1|http://tools.ietf.org/html/rfc7049#section-2.4.1>
 and C<eg/cbor.pl> for an example how to roundtrip instances of C<Time::Moment>.
 
+=head2 FREEZE / THAW
+
+C<Time::Moment> implements a C<FREEZE> method that returns the L<stringified|/stringification>
+representation of the instance and a C<THAW> method according to the protocol defined in 
+L<Types::Serialiser>.
+
 =head1 EXAMPLE FORMAT STRINGS
 
-=head2 ISO 8601
+=head2 ISO 8601 - Data elements and interchange formats
 
 =head3 Date
 
@@ -1038,6 +1159,23 @@ Combinations of week date and time of day
     %G-W%V-%uT%H:%M:%S%f%Z      2012-W52-1T15:30:45.500+01:00
     %G-W%V-%uT%H:%M%Z           2012-W52-1T15:30+01:00  (reduced accuracy)
 
+=head2 ISO 9075 - Information technology - Database languages - SQL
+
+Literal values from Part 2: Foundation (SQL/Foundation)
+
+    Date:                       Example:
+    %Y-%m-%d                    2012-12-24
+    
+    Time:                       Example:
+    H:%M:%S                     15:30:45
+    H:%M:%S%f                   15:30:45.500
+    
+    Timestamp:                  Example:
+    %Y-%m-%d H:%M:%S            2012-12-24 15:30:45
+    %Y-%m-%d H:%M:%S %:z        2012-12-24 15:30:45 +01:00
+    %Y-%m-%d H:%M:%S%f          2012-12-24 15:30:45.500
+    %Y-%m-%d H:%M:%S%f %:z      2012-12-24 15:30:45.500 +01:00
+
 =head2 RFC 1123 - Requirements for Internet Hosts
 
 L<RFC 822|http://tools.ietf.org/html/rfc822#section-5> as updated by 
@@ -1075,20 +1213,22 @@ L<RFC 5322 - 3.3. Date and Time Specification|http://tools.ietf.org/html/rfc5322
 
 Method called with wrong number of arguments.
 
-=item B<(F)> Parameter 'seconds' is out of supported range
+=item B<(F)> Parameter 'seconds' is out of range
 
 Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the range:
 
     [ -62135596800 (0001-01-01T00:00:00Z),
       253402300799 (9999-12-31T23:59:59Z) ]
 
-=item B<(F)> Parameter 'nanosecond' is out of the range [0, 999_999_999]
+=item B<(F)> Parameter '%s' is out of the range [%d, %d]
 
-=item B<(F)> Parameter 'offset' is out of the range [-1080, 1080]
+=item B<(F)> Parameter '%s' is out of range
 
 =item B<(F)> Cannot coerce object of type %s to Time::Moment
 
 =item B<(F)> Cannot parse the given string
+
+=item B<(F)> %s is not an instance of Time::Moment
 
 =item B<(F)> A %s object can only be compared to another %s object ('%s', '%s')
 

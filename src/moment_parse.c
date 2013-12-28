@@ -290,39 +290,141 @@ parse_zone_extended(const char *str, size_t len, int *op) {
     return n;
 }
 
+/*
+ *  Z
+ *  z
+ *  ±hh
+ *  ±hhmm
+ *  ±hh:mm
+ */
+
+static size_t
+parse_zone_lenient(const char *str, size_t len, bool accept_zulu, int *op) {
+    const unsigned char *p;
+    int o, h, m, sign;
+    size_t n;
+
+    if (len < 1)
+        return 0;
+
+    p = (const unsigned char *)str;
+    switch (*p) {
+        case 'z':
+        case 'Z':
+            if (!accept_zulu)
+                return 0;
+            o = 0;
+            n = 1;
+            goto offset;
+        case '+':
+            sign = 1;
+            break;
+        case '-':
+            sign = -1;
+            break;
+        default:
+            return 0;
+    }
+
+    if (len < 3)
+        return 0;
+
+    n = count_digits(p, 1, len);
+    m = 0;
+    switch (n) {
+        case 2: /* ±hh */
+            h = parse_number(p, 1, 2);
+            n = 3;
+            break;
+        case 4: /* ±hhmm */
+            h = parse_number(p, 1, 2);
+            m = parse_number(p, 3, 2);
+            n = 5;
+            goto hm;
+        default:
+            return 0;
+    }
+    
+    if (len < 4 || p[3] != ':')
+        goto hm;
+
+    if (count_digits(p, 4, len) != 2)
+        return 0;
+
+    m = parse_number(p, 4, 2);
+    n = 6;
+
+ hm:
+    if (h > 18 || m > 59)
+        return 0;
+    o = sign * (h * 60 + m);
+
+ offset:
+    if (op)
+        *op = o;
+    return n;
+}
+
 static int
-parse_string(const char *str, size_t len, int64_t *sp, IV *fp, IV *op) {
+parse_string(const char *str, size_t len, bool lenient, int64_t *sp, IV *fp, IV *op) {
     size_t n;
     dt_t dt;
-    int sod, frac, off;
-    bool ext;
+    int td, sod, frac, off;
+    bool extended, accept_zulu;
+
+    accept_zulu = 1;
 
     if (!(n = dt_parse_string(str, len, &dt)))
         return 1;
 
-    ext = str[4] == '-';
-    if (n == len || !(str[n] == 'T' || str[n] == ' '))
+    if (n == len)
         return 1;
 
-    ++n;
+    /* 
+     * 0123456789
+     * 2012-12-14 
+     */
+    extended = str[4] == '-';
+    if (lenient) /* only calendar date and time of day in extended format */
+        lenient = (extended && str[7] == '-');
+    switch (td = str[n++]) {
+        case 'T':
+            break;
+        case 't':
+        case ' ':
+            if (lenient)
+                break;
+            /* FALLTROUGH */
+        default:
+            return 1;
+    }
+
     str += n;
     len -= n;
 
-    if (ext)
+    if (extended)
         n = parse_time_extended(str, len, &sod, &frac);
     else
         n = parse_time_basic(str, len, &sod, &frac);
 
-    if (!n)
+    if (!n || n == len)
         return 1;
+
+    if (lenient && td == ' ' && str[n] == ' ')
+        accept_zulu = 0, n++;
 
     str += n;
     len -= n;
 
-    if (ext)
-        n = parse_zone_extended(str, len, &off);
-    else
+    if (extended) {
+        if (lenient)
+            n = parse_zone_lenient(str, len, accept_zulu, &off);
+        else 
+            n = parse_zone_extended(str, len, &off);
+    }
+    else {
         n = parse_zone_basic(str, len, &off);
+    }
 
     if (!n || n != len)
         return 1;
@@ -334,11 +436,11 @@ parse_string(const char *str, size_t len, int64_t *sp, IV *fp, IV *op) {
 }
 
 moment_t
-THX_moment_from_string(pTHX_ const char *str, STRLEN len) {
+THX_moment_from_string(pTHX_ const char *str, STRLEN len, bool lenient) {
     int64_t sec;
     IV frac, offset;
 
-    if (parse_string(str, len, &sec, &frac, &offset))
+    if (parse_string(str, len, lenient, &sec, &frac, &offset))
         croak("Cannot parse the given string");
 
     return moment_from_epoch(sec, frac, offset);
