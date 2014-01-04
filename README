@@ -46,7 +46,9 @@ SYNOPSIS
         $tm2          = $tm1->with_minute($minute);
         $tm2          = $tm1->with_second($second);
         $tm2          = $tm1->with_nanosecond($nanosecond);
-        $tm2          = $tm1->with_offset($offset);
+    
+        $tm2          = $tm1->with_offset_same_instant($offset);
+        $tm2          = $tm1->with_offset_same_local($offset);
     
         $tm2          = $tm1->plus_years($years);
         $tm2          = $tm1->plus_months($months);
@@ -292,7 +294,9 @@ CONSTRUCTORS
     and the zone designator if the time designator is replaced with a single
     space. The zone designator may be in basic format even though the
     calendar date and time of day is in extended format. The UTC designator
-    [Z] may also be in lower case [z].
+    [Z] may also be in lower case [z]. Usage of these string representations
+    is strongly discouraged because they do not conform to the ISO 8601
+    standard.
 
 INSTANCE METHODS
   year
@@ -430,12 +434,27 @@ INSTANCE METHODS
     Returns a copy of this instance with the given *nanosecond* of second
     [0, 999_999_999] altered.
 
-  with_offset
-        $tm2 = $tm1->with_offset($offset);
+  with_offset_same_instant
+        $tm2 = $tm1->with_offset_same_instant($offset);
 
     Returns a copy of this instance with the given time zone *offset* from
     UTC in minutes [-1080, 1080] altered. The resulting time is at the same
     instant.
+
+        $tm1 = Time::Moment->from_string('2012-12-24T15:30:45+01');
+        $tm2 = $tm1->with_offset_same_instant(0);
+        say $tm2; # 2012-12-24T14:30:45Z
+
+  with_offset_same_local
+        $tm2 = $tm1->with_offset_same_local($offset);
+
+    Returns a copy of this instance with the given time zone *offset* from
+    UTC in minutes [-1080, 1080] altered. The resulting time has the same
+    local time.
+
+        $tm1 = Time::Moment->from_string('2012-12-24T15:30:45+01');
+        $tm2 = $tm1->with_offset_same_local(0);
+        say $tm2; # 2012-12-24T15:30:45Z
 
   plus_years
         $tm2 = $tm1->plus_years($years);
@@ -1007,14 +1026,14 @@ EXAMPLE FORMAT STRINGS
         %Y-%m-%d                    2012-12-24
     
         Time:                       Example:
-        H:%M:%S                     15:30:45
-        H:%M:%S%f                   15:30:45.500
+        %H:%M:%S                    15:30:45
+        %H:%M:%S%f                  15:30:45.500
     
         Timestamp:                  Example:
-        %Y-%m-%d H:%M:%S            2012-12-24 15:30:45
-        %Y-%m-%d H:%M:%S %:z        2012-12-24 15:30:45 +01:00
-        %Y-%m-%d H:%M:%S%f          2012-12-24 15:30:45.500
-        %Y-%m-%d H:%M:%S%f %:z      2012-12-24 15:30:45.500 +01:00
+        %Y-%m-%d %H:%M:%S           2012-12-24 15:30:45
+        %Y-%m-%d %H:%M:%S %:z       2012-12-24 15:30:45 +01:00
+        %Y-%m-%d %H:%M:%S%f         2012-12-24 15:30:45.500
+        %Y-%m-%d %H:%M:%S%f %:z     2012-12-24 15:30:45.500 +01:00
 
   RFC 1123 - Requirements for Internet Hosts
     RFC 822 <http://tools.ietf.org/html/rfc822#section-5> as updated by RFC
@@ -1043,6 +1062,87 @@ EXAMPLE FORMAT STRINGS
         %a, %d %b %Y %H:%M %z       Mon, 24 Dec 2012 15:30 +0100
         %d %b %Y %H:%M:%S %z        24 Dec 2012 15:30:45 +0100
         %d %b %Y %H:%M %z           24 Dec 2012 15:30 +0100
+
+TIME ZONES
+    An instance of "Time::Moment" represents an unambiguous point in time,
+    but it's not fully time zone aware. When performing arithmetic on the
+    local date or time value or altering the components of the local date or
+    time it may be necessary to use a time zone to convert to the correct
+    representation.
+
+    "Time::Moment" is API compatible with DateTime::TimeZone and
+    DateTime::TimeZone::Tzfile.
+
+  Converting from UTC to designated time zone
+        $tm     = Time::Moment->now;
+        $zone   = DateTime::TimeZone->new(name => 'America/New_York');
+        $offset = int($zone->offset_for_datetime($tm) / 60);
+    
+        say $tm->with_offset_same_instant($offset);
+
+  Converting from local time to designated time zone
+        $tm     = Time::Moment->now;
+        $zone   = DateTime::TimeZone->new(name => 'America/New_York');
+        $offset = int($zone->offset_for_local_datetime($tm) / 60);
+    
+        say $tm->with_offset_same_local($offset);
+
+  The Effect of Daylight Saving Time
+    The time zone *Europe/Brussels* has 01:00 UTC as standard time, and
+    02:00 UTC as daylight savings time, with transition dates according to
+    the European Summer Time
+    <http://en.wikipedia.org/wiki/Summer_Time_in_Europe>.
+
+        $zone = DateTime::TimeZone->new(name => 'Europe/Brussels');
+    
+        sub convert_from_utc {
+            my ($tm, $zone) = @_;
+            my $offset = int($zone->offset_for_datetime($tm) / 60);
+            return $tm->with_offset_same_instant($offset);
+        }
+    
+        sub convert_from_local {
+            my ($tm, $zone) = @_;
+            my $offset = int($zone->offset_for_local_datetime($tm) / 60);
+            return $tm->with_offset_same_local($offset);
+        }
+
+    European Summer Time begins (clocks go forward) at 01:00 UTC on the last
+    Sunday in March, in 2014 the transition date is March 30.
+
+        $tm1 = Time::Moment->from_string('2014-03-29T12:00:00+01:00');
+        $tm2 = $tm1->plus_hours(24);
+        say convert_from_utc($tm2, $zone);   # 2014-03-30T13:00:00+02:00
+        say convert_from_local($tm2, $zone); # 2014-03-30T12:00:00+02:00
+
+    During the transition from standard time to daylight savings time, the
+    local time interval between 02:00:00 and 02:59:59 does not exist. Local
+    time values in that interval are invalid. "DateTime::TimeZone" raises an
+    exception when attempting to convert non-existing local time.
+
+        $tm1 = Time::Moment->from_string('2014-03-29T22:00:00+01:00');
+        $tm2 = $tm1->plus_hours(4);
+        say convert_from_utc($tm2, $zone);   # 2014-03-30T03:00:00+02:00
+        say convert_from_local($tm2, $zone); # raises an exception
+
+    European Summer Time ends (clocks go backward) at 01:00 UTC on the last
+    Sunday in October, in 2014 the transition date is October 26.
+
+        $tm1 = Time::Moment->from_string('2014-10-25T12:00:00+02:00');
+        $tm2 = $tm1->plus_hours(24);
+        say convert_from_utc($tm2, $zone);   # 2014-10-26T11:00:00+01:00
+        say convert_from_local($tm2, $zone); # 2014-10-26T12:00:00+01:00
+
+    During the transition from daylight savings time to standard time, the
+    local time interval between 02:00:00 and 02:59:59 is repeated. Local
+    time values in that interval are ambiguous because they occur twice.
+    When "DateTime::TimeZone" converts an ambiguous local time it returns
+    the numerically lowest offset (usually the standard one).
+
+        $tm1 = Time::Moment->from_string('2014-10-25T22:00:00+02:00');
+        $tm2 = $tm1->plus_hours(4);
+        say convert_from_utc($tm2, $zone);   # 2014-10-26T02:00:00+02:00
+        say convert_from_local($tm2, $zone); # 2014-10-26T02:00:00+01:00
 
 DIAGNOSTICS
     (F) Usage: %s

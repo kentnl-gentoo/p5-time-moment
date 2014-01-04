@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.12';
+    our $VERSION = '0.13';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -28,7 +28,7 @@ sub now {
     my ($sec, $usec) = Time::HiRes::gettimeofday();
     my $offset = int((timegm(localtime($sec)) - $sec) / 60);
     return $class->from_epoch($sec, $usec * 1000)
-                 ->with_offset($offset);
+                 ->with_offset_same_instant($offset);
 }
 
 sub now_utc {
@@ -63,13 +63,13 @@ sub DateTime::__as_Time_Moment {
                     .q/time zone to an instance of Time::Moment/);
 
     return Time::Moment->from_epoch($dt->epoch, $dt->nanosecond)
-                       ->with_offset(int($dt->offset / 60));
+                       ->with_offset_same_instant(int($dt->offset / 60));
 }
 
 sub Time::Piece::__as_Time_Moment {
     my ($tp) = @_;
     return Time::Moment->from_epoch($tp->epoch)
-                       ->with_offset(int($tp->tzoffset / 60));
+                       ->with_offset_same_instant(int($tp->tzoffset / 60));
 }
 
 sub STORABLE_freeze {
@@ -85,7 +85,8 @@ sub STORABLE_thaw {
       or die(q/Cannot deserialize corrupted data/); # Don't replace die with Carp!
     my ($offset, $rdn, $sod, $nos) = unpack 'xxnNNN', $packed;
     my $seconds = ($rdn - 719163) * 86400 + $sod;
-    $$self = ${ ref($self)->from_epoch($seconds, $nos)->with_offset($offset) };
+    $$self = ${ ref($self)->from_epoch($seconds, $nos)
+                          ->with_offset_same_instant($offset) };
 }
 
 sub TO_JSON {
@@ -98,12 +99,11 @@ sub TO_CBOR {
 }
 
 sub FREEZE {
-    my ($self, $serialiser) = @_;
-    return $self->to_string;
+    return $_[0]->to_string;
 }
 
 sub THAW {
-    my ($class, $serialiser, $string) = @_;
+    my ($class, undef, $string) = @_;
     return $class->from_string($string);
 }
 

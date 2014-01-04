@@ -58,8 +58,11 @@ t/180_from_string.t
 t/200_compare.t
 t/300_strftime.t
 t/400_with.t
+t/410_with_offset.t
 t/500_storable.t
 t/510_json.t
 t/520_cbor.t
+t/600_coerce_dt.t
+t/610_coerce_tp.t
 t/Util.pm
 typemap
