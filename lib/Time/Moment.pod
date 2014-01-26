@@ -308,6 +308,10 @@ in extended format:
     YYYY-MM-DD hh:mm:ss ±hh:mm    2012-12-24 12:15:30 +01:00
     YYYY-MM-DD hh:mm:ss ±hhmm     2012-12-24 12:15:30 +0100
     YYYY-MM-DD hh:mm:ss ±hh       2012-12-24 12:15:30 +01
+    YYYY-MM-DD hh:mm:ss GMT       2012-12-24 12:15:30 GMT
+    YYYY-MM-DD hh:mm:ss GMT±hh    2012-12-24 12:15:30 GMT+01
+    YYYY-MM-DD hh:mm:ss UTC       2012-12-24 12:15:30 UTC
+    YYYY-MM-DD hh:mm:ss UTC±hh    2012-12-24 12:15:30 UTC+01
     
     YYYY-MM-DD hh:mm:ss.ss ±hhmm  2012-12-24 12:15:30.500 +0100
     YYYY-MM-DD hh:mm:ss.ss ±hh:mm 2012-12-24 12:15:30.500 +01:00
@@ -322,8 +326,9 @@ space. A single space is also accepted between the time of day and the zone
 designator if the time designator is replaced with a single space. The zone 
 designator may be in basic format even though the calendar date and time of 
 day is in extended format. The UTC designator [Z] may also be in lower case 
-[z]. Usage of these string representations is strongly discouraged because 
-they do not conform to the ISO 8601 standard.
+[z]. The literal string GMT or UTC may be used as a UTC designator and may
+have an offset. Usage of these string representations is strongly discouraged 
+as they do not conform to the ISO 8601 standard.
 
 =head1 INSTANCE METHODS
 
@@ -1061,17 +1066,22 @@ representation of the instance.
 
 =head2 CBOR
 
-C<Time::Moment> implements a C<TO_CBOR> method that stores the L<stringified|/stringification>
-representation of the instance as a I<standard date/time string> using tag C<0>.
+C<Time::Moment> implements a C<TO_CBOR> method that returns the L<stringified|/stringification>
+representation of the instance using tag C<0> (I<standard date/time string>).
 
 See L<CBOR::XS>, L<RFC 7049 Section 2.4.1|http://tools.ietf.org/html/rfc7049#section-2.4.1>
 and C<eg/cbor.pl> for an example how to roundtrip instances of C<Time::Moment>.
 
-=head2 FREEZE / THAW
+=head2 Sereal
+
+L<Sereal> version 2.030 or later implements support for the generic serialization 
+protocol C<FREEZE/THAW>.
+
+=head2 FREEZE/THAW
 
 C<Time::Moment> implements a C<FREEZE> method that returns the L<stringified|/stringification>
-representation of the instance and a C<THAW> method according to the protocol defined in 
-L<Types::Serialiser>.
+representation of the instance and a C<THAW> method according to the serialization 
+protocol specified in L<Types::Serialiser>.
 
 =head1 EXAMPLE FORMAT STRINGS
 

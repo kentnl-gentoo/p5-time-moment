@@ -5,6 +5,7 @@ dev/sizeof.pl
 eg/cbor.pl
 eg/clocks.pl
 eg/json.pl
+eg/sereal.pl
 eg/strftime.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
@@ -34,8 +35,8 @@ src/dt_arithmetic.h
 src/dt_config.h
 src/dt_core.c
 src/dt_core.h
-src/dt_parse.c
-src/dt_parse.h
+src/dt_parse_iso.c
+src/dt_parse_iso.h
 src/dt_util.c
 src/dt_util.h
 src/dt_valid.c
@@ -62,6 +63,7 @@ t/410_with_offset.t
 t/500_storable.t
 t/510_json.t
 t/520_cbor.t
+t/530_sereal.t
 t/600_coerce_dt.t
 t/610_coerce_tp.t
 t/Util.pm
