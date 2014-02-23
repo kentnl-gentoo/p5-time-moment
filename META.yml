@@ -3,20 +3,20 @@ abstract: 'Represents a date and time of day with an offset from UTC'
 author:
   - 'Christian Hansen C<chansen@cpan.org>'
 build_requires:
-  ExtUtils::MakeMaker: 6.59
+  ExtUtils::MakeMaker: '6.59'
   Test::Fatal: 0
-  Test::More: 0.88
+  Test::More: '0.88'
   Test::Requires: 0
 configure_requires:
-  ExtUtils::MakeMaker: 6.59
-  ExtUtils::ParseXS: 2.21
+  ExtUtils::MakeMaker: '6.59'
+  ExtUtils::ParseXS: '2.21'
 distribution_type: module
 dynamic_config: 1
 generated_by: 'Module::Install version 1.06'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: Time-Moment
 no_index:
   directory:
@@ -25,10 +25,10 @@ no_index:
 requires:
   Carp: 0
   Time::HiRes: 0
-  XSLoader: 0.02
+  XSLoader: '0.02'
   perl: 5.8.1
 resources:
   bugtracker: https://github.com/chansen/p5-time-moment/issues
   license: http://dev.perl.org/licenses/
   repository: https://github.com/chansen/p5-time-moment
-version: 0.14
+version: '0.15'

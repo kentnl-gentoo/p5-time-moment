@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.14';
+    our $VERSION = '0.15';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -106,6 +106,9 @@ sub THAW {
     my ($class, undef, $string) = @_;
     return $class->from_string($string);
 }
+
+# Alias
+*with_offset = \&with_offset_same_instant;
 
 1;
 

@@ -18,6 +18,7 @@ typedef enum {
     MOMENT_PARAM_NANOSECOND,
     MOMENT_PARAM_OFFSET,
     MOMENT_PARAM_LENIENT,
+    MOMENT_PARAM_REDUCED,
 } moment_param_t;
 
 typedef int64_t I64V;
@@ -96,6 +97,8 @@ moment_param(const char *s, const STRLEN len) {
         case 7:
             if (memEQ(s, "lenient", 7))
                 return MOMENT_PARAM_LENIENT;
+            if (memEQ(s, "reduced", 7))
+                return MOMENT_PARAM_REDUCED;
             break;
         case 10:
             if (memEQ(s, "nanosecond", 10))
@@ -584,7 +587,6 @@ with_offset_same_instant(self, offset)
   PREINIT:
     dSTASH_INVOCANT;
   ALIAS:
-    Time::Moment::with_offset              = 0
     Time::Moment::with_offset_same_instant = 0
     Time::Moment::with_offset_same_local   = 1
   CODE:
@@ -643,6 +645,23 @@ year(self)
         case 12: v = moment_microsecond(self);      break;
         case 13: v = moment_nanosecond(self);       break;
         case 14: v = moment_offset(self);           break;
+    }
+    XSRETURN_IV(v);
+
+void
+length_of_year(self)
+    const moment_t *self
+  ALIAS:
+    Time::Moment::length_of_year    =  0
+    Time::Moment::length_of_quarter =  1
+    Time::Moment::length_of_month   =  2
+  PREINIT:
+    IV v = 0;
+  PPCODE:
+    switch (ix) {
+        case 0: v = moment_length_of_year(self);    break;
+        case 1: v = moment_length_of_quarter(self); break;
+        case 2: v = moment_length_of_month(self);   break;
     }
     XSRETURN_IV(v);
 
@@ -725,9 +744,27 @@ strftime(self, format)
     XSRETURN_SV(ret);
 
 void
-to_string(self, reduced=FALSE)
+to_string(self, ...)
     const moment_t *self
-    bool reduced
+  PREINIT:
+    bool reduced;
+    STRLEN len;
+    const char *str;
+    I32 i;
   PPCODE:
+    if (((items - 1) % 2) != 0)
+        croak("Odd number of elements in named parameters");
+
+    reduced = FALSE;
+    for (i = 1; i < items; i += 2) {
+        str = SvPV_const(ST(i), len);
+        switch (moment_param(str, len)) {
+            case MOMENT_PARAM_REDUCED:
+                reduced = cBOOL(SvTRUE((ST(i+1))));
+                break;
+            default: 
+                croak("Unrecognised parameter: '%s'", str);
+        }
+    }
     XSRETURN_SV(moment_to_string(self, reduced));
 

@@ -23,43 +23,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __DT_CONFIG_H__
-#define __DT_CONFIG_H__
+#include <stddef.h>
+#include "dt_core.h"
+#include "dt_util.h"
 
-#if !defined(_MSC_VER)
-#  include <stdbool.h>
-#endif
-
-#if !defined(__cplusplus) && !defined(__bool_true_false_are_defined)
-   typedef char  _Bool;
-#  define  bool  _Bool
-#  define  true  1
-#  define  false 0
-#  define  __bool_true_false_are_defined 1
-#endif
-
-/* Chronological Julian Date, January 1, 4713 BC, Monday
-#define DT_EPOCH_OFFSET 1721425
-*/
-
-/* Network Time Protocol (NTP), January 1, 1900, Monday
-#define DT_EPOCH_OFFSET -693596
-*/
-
-/* Unix, January 1, 1970, Thursday
-#define DT_EPOCH_OFFSET -719163
-*/
-
-/* Rata Die, January 1, 0001, Monday (as Day 1) */
-#define DT_EPOCH_OFFSET 0
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef int dt_t;
-
-#ifdef __cplusplus
+int
+dt_length_of_year(dt_t dt) {
+    int y;
+    dt_to_yd(dt, &y, NULL);
+    return dt_days_in_year(y);
 }
-#endif
-#endif
+
+int
+dt_length_of_quarter(dt_t dt) {
+    int y, q;
+    dt_to_yqd(dt, &y, &q, NULL);
+    return dt_days_in_quarter(y, q);
+}
+
+int
+dt_length_of_month(dt_t dt) {
+    int y, m;
+    dt_to_ymd(dt, &y, &m, NULL);
+    return dt_days_in_month(y, m);
+}
+

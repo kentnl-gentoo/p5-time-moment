@@ -23,43 +23,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __DT_CONFIG_H__
-#define __DT_CONFIG_H__
-
-#if !defined(_MSC_VER)
-#  include <stdbool.h>
-#endif
-
-#if !defined(__cplusplus) && !defined(__bool_true_false_are_defined)
-   typedef char  _Bool;
-#  define  bool  _Bool
-#  define  true  1
-#  define  false 0
-#  define  __bool_true_false_are_defined 1
-#endif
-
-/* Chronological Julian Date, January 1, 4713 BC, Monday
-#define DT_EPOCH_OFFSET 1721425
-*/
-
-/* Network Time Protocol (NTP), January 1, 1900, Monday
-#define DT_EPOCH_OFFSET -693596
-*/
-
-/* Unix, January 1, 1970, Thursday
-#define DT_EPOCH_OFFSET -719163
-*/
-
-/* Rata Die, January 1, 0001, Monday (as Day 1) */
-#define DT_EPOCH_OFFSET 0
+#ifndef __DT_LENGTH_H__
+#define __DT_LENGTH_H__
+#include "dt_core.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef int dt_t;
+int     dt_length_of_year       (dt_t dt);
+int     dt_length_of_quarter    (dt_t dt);
+int     dt_length_of_month      (dt_t dt);
 
 #ifdef __cplusplus
 }
 #endif
 #endif
+
