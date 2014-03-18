@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.15';
+    our $VERSION = '0.16';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -84,6 +84,7 @@ sub STORABLE_thaw {
     (length($packed) == 16 && vec($packed, 0, 16) == 0x544D) # TM
       or die(q/Cannot deserialize corrupted data/); # Don't replace die with Carp!
     my ($offset, $rdn, $sod, $nos) = unpack 'xxnNNN', $packed;
+    $offset = ($offset & 0x7FFF) - 0x8000 if ($offset & 0x8000);
     my $seconds = ($rdn - 719163) * 86400 + $sod;
     $$self = ${ ref($self)->from_epoch($seconds, $nos)
                           ->with_offset_same_instant($offset) };

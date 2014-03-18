@@ -45,10 +45,13 @@ Time::Moment - Represents a date and time of day with an offset from UTC
     $tm2          = $tm1->with_year($year);
     $tm2          = $tm1->with_month($month);
     $tm2          = $tm1->with_day_of_year($day);
+    $tm2          = $tm1->with_day_of_quarter($day);
     $tm2          = $tm1->with_day_of_month($day);
     $tm2          = $tm1->with_hour($hour);
     $tm2          = $tm1->with_minute($minute);
     $tm2          = $tm1->with_second($second);
+    $tm2          = $tm1->with_millisecond($millisecond);
+    $tm2          = $tm1->with_microsecond($microsecond);
     $tm2          = $tm1->with_nanosecond($nanosecond);
     
     $tm2          = $tm1->with_offset_same_instant($offset);
@@ -61,6 +64,8 @@ Time::Moment - Represents a date and time of day with an offset from UTC
     $tm2          = $tm1->plus_hours($hours);
     $tm2          = $tm1->plus_minutes($minutes);
     $tm2          = $tm1->plus_seconds($seconds);
+    $tm2          = $tm1->plus_milliseconds($milliseconds);
+    $tm2          = $tm1->plus_microseconds($microseconds);
     $tm2          = $tm1->plus_nanoseconds($nanoseconds);
     
     $tm2          = $tm1->minus_years($years);
@@ -70,6 +75,8 @@ Time::Moment - Represents a date and time of day with an offset from UTC
     $tm2          = $tm1->minus_hours($hours);
     $tm2          = $tm1->minus_minutes($minutes);
     $tm2          = $tm1->minus_seconds($seconds);
+    $tm2          = $tm1->minus_milliseconds($milliseconds);
+    $tm2          = $tm1->minus_microseconds($microseconds);
     $tm2          = $tm1->minus_nanoseconds($nanoseconds);
     
     $tm2          = $tm1->at_utc;
@@ -83,9 +90,9 @@ Time::Moment - Represents a date and time of day with an offset from UTC
     $string       = $tm->to_string;
     $string       = $tm->strftime($format);
     
-    $days         = $tm->length_of_year;
-    $days         = $tm->length_of_quarter;
-    $days         = $tm->length_of_month;
+    $integer      = $tm->length_of_year;                # [365, 366]
+    $integer      = $tm->length_of_quarter;             # [90, 92]
+    $integer      = $tm->length_of_month;               # [28, 31]
     
     @values       = $tm->utc_rd_values;
     $seconds      = $tm->utc_rd_as_seconds;
@@ -225,7 +232,7 @@ time zone is not supported.
 
 =item L<Time::Piece>
 
-    $tm = Time::Moment->from_object( Time::Piece::localtime() );
+    $tm = Time::Moment->from_object( scalar Time::Piece::localtime() );
 
 The given C<Time::Piece> object must be within the supported date range.
 
@@ -234,7 +241,7 @@ The given C<Time::Piece> object must be within the supported date range.
 The coercion scheme is extensible and implemented as documented in 
 L<Params::Coerce>:
 
-    $tm = Params::Coerce::coerce('Time::Moment', Time::Piece::localtime());
+    $tm = Params::Coerce::coerce('Time::Moment', scalar Time::Piece::localtime());
     $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
 
 C<Time::Moment> also implements a coercion handler from C<Time::Moment> to 
@@ -449,6 +456,21 @@ altered. The day of the month of the date is unchanged unless the day does not
 exist in the given month. In that case, the day is set to the last day of the 
 given month.
 
+=head2 with_day_of_year
+
+    $tm2 = $tm1->with_day_of_year($day);
+
+Returns a copy of this instance with the given I<day> of the year [1, 366] 
+altered. The day must be valid for the year, otherwise an exception is raised.
+
+=head2 with_day_of_quarter
+
+    $tm2 = $tm1->with_day_of_quarter($day);
+
+Returns a copy of this instance with the given I<day> of the quarter [1, 92] 
+altered. The day must be valid for the year and quarter, otherwise an 
+exception is raised.
+
 =head2 with_day_of_month
 
     $tm2 = $tm1->with_day_of_month($day);
@@ -456,13 +478,6 @@ given month.
 Returns a copy of this instance with the given I<day> of the month [1, 31] 
 altered. The day must be valid for the year and month, otherwise an exception 
 is raised.
-
-=head2 with_day_of_year
-
-    $tm2 = $tm1->with_day_of_year($day);
-
-Returns a copy of this instance with the given I<day> of the year [1, 366] 
-altered. The day must be valid for the year, otherwise an exception is raised.
 
 =head2 with_hour
 
@@ -484,11 +499,25 @@ altered.
 Returns a copy of this instance with the given I<second> of minute [0, 59] 
 altered.
 
+=head2 with_millisecond
+
+    $tm2 = $tm1->with_millisecond($millisecond);
+
+Returns a copy of this instance with the given I<millisecond> of the second 
+[0, 999] altered.
+
+=head2 with_microsecond
+
+    $tm2 = $tm1->with_microsecond($microsecond);
+
+Returns a copy of this instance with the given I<microsecond> of the second 
+[0, 999_999] altered.
+
 =head2 with_nanosecond
 
     $tm2 = $tm1->with_nanosecond($nanosecond);
 
-Returns a copy of this instance with the given I<nanosecond> of second 
+Returns a copy of this instance with the given I<nanosecond> of the second 
 [0, 999_999_999] altered.
 
 =head2 with_offset_same_instant
@@ -562,6 +591,18 @@ Returns a copy of this instance with the given number of minutes added.
 
 Returns a copy of this instance with the given number of seconds added.
 
+=head2 plus_milliseconds
+
+    $tm2 = $tm1->plus_milliseconds($milliseconds);
+
+Returns a copy of this instance with the given number of milliseconds added.
+
+=head2 plus_microseconds
+
+    $tm2 = $tm1->plus_microseconds($microseconds);
+
+Returns a copy of this instance with the given number of microseconds added.
+
 =head2 plus_nanoseconds
 
     $tm2 = $tm1->plus_nanoseconds($nanoeconds);
@@ -616,6 +657,20 @@ Returns a copy of this instance with the given number of minutes subtracted.
     $tm2 = $tm1->minus_seconds($seconds);
 
 Returns a copy of this instance with the given number of seconds subtracted.
+
+=head2 minus_milliseconds
+
+    $tm2 = $tm1->minus_milliseconds($milliseconds);
+
+Returns a copy of this instance with the given number of milliseconds 
+subtracted.
+
+=head2 minus_microseconds
+
+    $tm2 = $tm1->minus_microseconds($microseconds);
+
+Returns a copy of this instance with the given number of microseconds 
+subtracted.
 
 =head2 minus_nanoseconds
 
@@ -942,15 +997,21 @@ Replaced by %.
 
 =head2 length_of_year
 
-Returns the length of the year in days [1, 366].
+    $integer = $tm->length_of_year;
+
+Returns the length of the year in days [365, 366].
 
 =head2 length_of_quarter
 
-Returns the length of the quarter of the year in days [1, 92].
+    $integer = $tm->length_of_quarter;
+
+Returns the length of the quarter of the year in days [90, 92].
 
 =head2 length_of_month
 
-Returns the length of the month of the year in days [1, 31].
+    $integer = $tm->length_of_month;
+
+Returns the length of the month of the year in days [28, 31].
 
 =head2 utc_rd_values
 
@@ -1364,7 +1425,13 @@ Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the range:
 
 =head1 THREAD SAFETY
 
+C<Time::Moment> is thread safe.
+
 =head1 SEE ALSO
+
+L<DateTime>
+
+L<Time::Piece>
 
 =head1 SUPPORT
 
