@@ -107,9 +107,6 @@ SYNOPSIS
         $string       = "$tm";
 
 DESCRIPTION
-    IMPORTANT: This is an early preview release available for testing and
-    feedback. The API is still subject to change.
-
     "Time::Moment" is an immutable object representing a date and time of
     day with an offset from UTC in the ISO 8601 calendar system.
 

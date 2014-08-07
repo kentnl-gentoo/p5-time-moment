@@ -4,7 +4,7 @@ author:
   - 'Christian Hansen C<chansen@cpan.org>'
 build_requires:
   ExtUtils::MakeMaker: 6.59
-  Test::Fatal: 0
+  Test::Fatal: '0.006'
   Test::More: '0.88'
   Test::Requires: 0
 configure_requires:
@@ -31,4 +31,4 @@ resources:
   bugtracker: https://github.com/chansen/p5-time-moment/issues
   license: http://dev.perl.org/licenses/
   repository: https://github.com/chansen/p5-time-moment
-version: '0.16'
+version: '0.17'
