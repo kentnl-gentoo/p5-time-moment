@@ -6,7 +6,7 @@ use Carp        qw[];
 use Time::HiRes qw[];
 
 BEGIN {
-    our $VERSION = '0.17';
+    our $VERSION = '0.18';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -110,6 +110,11 @@ sub THAW {
 
 # Alias
 *with_offset = \&with_offset_same_instant;
+
+# used by DateTime::TimeZone
+sub utc_year {
+    return $_[0]->with_offset_same_instant(0)->year;
+}
 
 1;
 

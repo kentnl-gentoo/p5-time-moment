@@ -68,5 +68,6 @@ t/520_cbor.t
 t/530_sereal.t
 t/600_coerce_dt.t
 t/610_coerce_tp.t
+t/900_bug_reuse.t
 t/Util.pm
 typemap
