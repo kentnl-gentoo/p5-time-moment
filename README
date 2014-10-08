@@ -38,6 +38,9 @@ SYNOPSIS
         $epoch        = $tm->epoch;
         $offset       = $tm->offset;                        # [-1080, 1080]
     
+        $jd           = $tm->jd;
+        $mjd          = $tm->mjd;
+    
         $tm2          = $tm1->with_year($year);
         $tm2          = $tm1->with_month($month);
         $tm2          = $tm1->with_day_of_year($day);
@@ -394,6 +397,25 @@ INSTANCE METHODS
         $offset = $tm->offset;
 
     Returns the time zone offset from UTC in minutes [-1080, 1080].
+
+  jd
+        $jd = $tm->jd;
+
+    Returns the Julian Date. Julian Date is a count of days elapsed since
+    Greenwich Mean Time noon on January 1, 4713 BCE (proleptic Julian
+    calendar). The fractional part corresponds to the fraction of the day
+    after noon.
+
+  mjd
+        $mjd = $tm->mjd;
+
+    Returns the Modified Julian Date. Modified Julian Date is a count of
+    days elapsed since Greenwich Mean Time midnight on Novemeber 17, 1858.
+    The fractional part corresponds to the fraction of the day after
+    midnight.
+
+        $tm = Time::Moment->now;
+        say $tm->jd - $tm->mjd; # 2400000.5
 
   with_year
         $tm2 = $tm1->with_year($year);
