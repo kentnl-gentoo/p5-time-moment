@@ -43,9 +43,11 @@ SYNOPSIS
     
         $tm2          = $tm1->with_year($year);
         $tm2          = $tm1->with_month($month);
+        $tm2          = $tm1->with_week($week);
         $tm2          = $tm1->with_day_of_year($day);
         $tm2          = $tm1->with_day_of_quarter($day);
         $tm2          = $tm1->with_day_of_month($day);
+        $tm2          = $tm1->with_day_of_week($day);
         $tm2          = $tm1->with_hour($hour);
         $tm2          = $tm1->with_minute($minute);
         $tm2          = $tm1->with_second($second);
@@ -92,6 +94,7 @@ SYNOPSIS
         $integer      = $tm->length_of_year;                # [365, 366]
         $integer      = $tm->length_of_quarter;             # [90, 92]
         $integer      = $tm->length_of_month;               # [28, 31]
+        $integer      = $tm->length_of_week_year;           # [52, 53]
     
         @values       = $tm->utc_rd_values;
         $seconds      = $tm->utc_rd_as_seconds;
@@ -229,11 +232,11 @@ CONSTRUCTORS
     Constructs an instance of "Time::Moment" from the given *string*. The
     string must consist of a complete date representation and time of day
     followed by a time zone designator. The time of day may be reduced to
-    hour of the day, the second of the day may have a decimal fraction. The
-    decimal sign can be either the comma [,] or the full stop [.]. A decimal
-    fraction must have at least one digit and may have a total of nine
-    digits, if the fractional precision is greater than nine digits, the
-    value will be truncated.
+    hour of the day, the second of the minute may have a decimal fraction.
+    The decimal sign can be either the comma [,] or the full stop [.]. A
+    decimal fraction must have at least one digit and may have a total of
+    nine digits, if the fractional precision is greater than nine digits,
+    the value will be truncated.
 
     The following are examples of complete date representations and time of
     day representations:
@@ -392,8 +395,7 @@ INSTANCE METHODS
   epoch
         $epoch = $tm->epoch;
 
-    Returns the number of integral seconds from the epoch of
-    1970-01-01T00:00:00Z.
+    Returns the number of integral seconds from the epoch of 1970-01-01T00Z.
 
   offset
         $offset = $tm->offset;
@@ -433,6 +435,13 @@ INSTANCE METHODS
     day does not exist in the given month. In that case, the day is set to
     the last day of the given month.
 
+  with_week
+        $tm2 = $tm1->with_week($week);
+
+    Returns a copy of this instance with the given *week* of the year [1,
+    53] altered. The week of the year must be valid for the year, otherwise
+    an exception is raised.
+
   with_day_of_year
         $tm2 = $tm1->with_day_of_year($day);
 
@@ -453,6 +462,12 @@ INSTANCE METHODS
     Returns a copy of this instance with the given *day* of the month [1,
     31] altered. The day must be valid for the year and month, otherwise an
     exception is raised.
+
+  with_day_of_week
+        $tm2 = $tm1->with_day_of_week($day);
+
+    Returns a copy of this instance with the given *day* of the week
+    [1=Monday, 7=Sunday] altered.
 
   with_hour
         $tm2 = $tm1->with_hour($hour);
@@ -857,8 +872,7 @@ INSTANCE METHODS
         next week is week 1. Both January 4th and the first Thursday of
         January are always in week 1.
 
-    <%w>
-        Replaced by the day of the week as a decimal number [0, 6], with 0
+    %w  Replaced by the day of the week as a decimal number [0, 6], with 0
         representing Sunday.
 
     %W  Replaced by the week number of the year as a decimal number [00,
@@ -899,6 +913,11 @@ INSTANCE METHODS
         $integer = $tm->length_of_month;
 
     Returns the length of the month of the year in days [28, 31].
+
+  length_of_week_year
+        $integer = $tm->length_of_week_year;
+
+    Returns the length of the week of the year in weeks [52, 53].
 
   utc_rd_values
         ($rd, $sod, $nanosecond) = $tm->utc_rd_values;
@@ -1251,6 +1270,8 @@ DIAGNOSTICS
     (F) Usage: %s
         Method called with wrong number of arguments.
 
+    (F) Parameter '%s' is out of the range [%d, %d]
+    (F) Parameter '%s' is out of range
     (F) Parameter 'seconds' is out of range
         Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the
         range:
@@ -1258,8 +1279,6 @@ DIAGNOSTICS
             [ -62135596800 (0001-01-01T00:00:00Z),
               253402300799 (9999-12-31T23:59:59Z) ]
 
-    (F) Parameter '%s' is out of the range [%d, %d]
-    (F) Parameter '%s' is out of range
     (F) Cannot coerce object of type %s to Time::Moment
     (F) Cannot parse the given string
     (F) %s is not an instance of Time::Moment
@@ -1291,7 +1310,7 @@ AUTHOR
     Christian Hansen "chansen@cpan.org"
 
 COPYRIGHT
-    Copyright 2013 by Christian Hansen.
+    Copyright 2013-2014 by Christian Hansen.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
