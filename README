@@ -377,6 +377,11 @@ INSTANCE METHODS
 
     Returns the second of the minute [0, 59].
 
+  second_of_day
+        $second = $tm->second_of_day;
+
+    Returns the second of the day [0, 86399].
+
   millisecond
         $millisecond = $tm->millisecond;
 
@@ -439,8 +444,8 @@ INSTANCE METHODS
         $tm2 = $tm1->with_week($week);
 
     Returns a copy of this instance with the given *week* of the year [1,
-    53] altered. The week of the year must be valid for the year, otherwise
-    an exception is raised.
+    53] altered. The week must be valid for the year, otherwise an exception
+    is raised.
 
   with_day_of_year
         $tm2 = $tm1->with_day_of_year($day);
@@ -852,7 +857,7 @@ INSTANCE METHODS
         <http://pubs.opengroup.org/onlinepubs/9699919799/functions/strftime.
         html>*.
 
-    %S  Replaced by the second of hour as a decimal number [00, 60].
+    %S  Replaced by the second of hour as a decimal number [00, 59].
 
     %t  Replaced by a <tab> character.
 
