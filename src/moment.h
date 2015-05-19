@@ -87,6 +87,7 @@ typedef enum {
     MOMENT_COMPONENT_HOUR,
     MOMENT_COMPONENT_MINUTE,
     MOMENT_COMPONENT_SECOND,
+    MOMENT_COMPONENT_SECOND_OF_DAY,
     MOMENT_COMPONENT_MILLISECOND,
     MOMENT_COMPONENT_MICROSECOND,
     MOMENT_COMPONENT_NANOSECOND,
@@ -111,7 +112,7 @@ dt_t        moment_local_dt(const moment_t *mt);
 void        moment_to_utc_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 void        moment_to_local_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 
-int         moment_compare(const moment_t *m1, const moment_t *m2);
+int         moment_compare_instant(const moment_t *m1, const moment_t *m2);
 int         moment_compare_local(const moment_t *m1, const moment_t *m2);
 
 int         moment_year(const moment_t *mt);
@@ -140,6 +141,14 @@ int         moment_length_of_quarter(const moment_t *mt);
 int         moment_length_of_month(const moment_t *mt);
 int         moment_length_of_week_year(const moment_t *mt);
 
+moment_t    THX_moment_at_utc(pTHX_ const moment_t *mt);
+moment_t    THX_moment_at_midnight(pTHX_ const moment_t *mt);
+moment_t    THX_moment_at_noon(pTHX_ const moment_t *mt);
+moment_t    THX_moment_at_last_day_of_year(pTHX_ const moment_t *mt);
+moment_t    THX_moment_at_last_day_of_quarter(pTHX_ const moment_t *mt);
+moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
+
+
 #define moment_new(Y, M, D, h, m, s, ns, offset) \
     THX_moment_new(aTHX_ Y, M, D, h, m, s, ns, offset)
 
@@ -164,5 +173,22 @@ int         moment_length_of_week_year(const moment_t *mt);
 #define moment_with_component(self, component, v) \
     THX_moment_with_component(aTHX_ self, component, v)
 
-#endif
+#define moment_at_utc(self) \
+    THX_moment_at_utc(aTHX_ self)
 
+#define moment_at_midnight(self) \
+    THX_moment_at_midnight(aTHX_ self)
+
+#define moment_at_noon(self) \
+    THX_moment_at_noon(aTHX_ self)
+
+#define moment_at_last_day_of_year(self) \
+    THX_moment_at_last_day_of_year(aTHX_ self)
+
+#define moment_at_last_day_of_quarter(self) \
+    THX_moment_at_last_day_of_quarter(aTHX_ self)
+
+#define moment_at_last_day_of_month(self) \
+    THX_moment_at_last_day_of_month(aTHX_ self)
+
+#endif

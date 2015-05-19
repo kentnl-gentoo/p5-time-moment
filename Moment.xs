@@ -311,7 +311,7 @@ XS(XS_Time_Moment_ncmp) {
         m1 = m2;
         m2 = tmp;
     }
-    XSRETURN_IV(moment_compare(m1, m2));
+    XSRETURN_IV(moment_compare_instant(m1, m2));
 }
 
 #ifdef HAS_GETTIMEOFDAY
@@ -494,10 +494,24 @@ at_utc(self)
     const moment_t *self
   PREINIT:
     dSTASH_INVOCANT;
+  ALIAS:
+    Time::Moment::at_utc                 = 0
+    Time::Moment::at_midnight            = 1
+    Time::Moment::at_noon                = 2
+    Time::Moment::at_last_day_of_year    = 3
+    Time::Moment::at_last_day_of_quarter = 4
+    Time::Moment::at_last_day_of_month   = 5
   CODE:
-    if (0 == moment_offset(self))
+    switch (ix) {
+        case 0: RETVAL = moment_at_utc(self);                   break;
+        case 1: RETVAL = moment_at_midnight(self);              break;
+        case 2: RETVAL = moment_at_noon(self);                  break;
+        case 3: RETVAL = moment_at_last_day_of_year(self);      break;
+        case 4: RETVAL = moment_at_last_day_of_quarter(self);   break;
+        case 5: RETVAL = moment_at_last_day_of_month(self);     break;
+    }
+    if (moment_compare_local(self, &RETVAL) == 0)
         XSRETURN(1);
-    RETVAL = moment_with_offset_same_instant(self, 0);
     if (sv_reusable(ST(0))) {
         sv_set_moment(ST(0), &RETVAL);
         XSRETURN(1);
@@ -578,6 +592,7 @@ with_year(self, value)
     Time::Moment::with_hour           =  MOMENT_COMPONENT_HOUR
     Time::Moment::with_minute         =  MOMENT_COMPONENT_MINUTE
     Time::Moment::with_second         =  MOMENT_COMPONENT_SECOND
+    Time::Moment::with_second_of_day  =  MOMENT_COMPONENT_SECOND_OF_DAY
     Time::Moment::with_millisecond    =  MOMENT_COMPONENT_MILLISECOND
     Time::Moment::with_microsecond    =  MOMENT_COMPONENT_MICROSECOND
     Time::Moment::with_nanosecond     =  MOMENT_COMPONENT_NANOSECOND
@@ -609,7 +624,7 @@ with_offset_same_instant(self, offset)
     }
     else {
         RETVAL = moment_with_offset_same_local(self, offset);
-        if (moment_compare(self, &RETVAL) == 0)
+        if (moment_compare_instant(self, &RETVAL) == 0)
             XSRETURN(1);
     }
     if (sv_reusable(ST(0))) {
@@ -737,7 +752,7 @@ compare(self, other)
     const moment_t *self
     const moment_t *other
   CODE:
-    RETVAL = moment_compare(self, other);
+    RETVAL = moment_compare_instant(self, other);
   OUTPUT:
     RETVAL
 
@@ -753,9 +768,9 @@ is_equal(self, other)
     bool v = FALSE;
   PPCODE:
     switch (ix) {
-        case 0: v = moment_compare(self, other) == 0; break;
-        case 1: v = moment_compare(self, other) < 0;  break;
-        case 2: v = moment_compare(self, other) > 0;  break;
+        case 0: v = moment_compare_instant(self, other) == 0; break;
+        case 1: v = moment_compare_instant(self, other) < 0;  break;
+        case 2: v = moment_compare_instant(self, other) > 0;  break;
     }
     XSRETURN_BOOL(v);
 
