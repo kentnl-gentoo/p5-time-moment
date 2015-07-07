@@ -6,18 +6,18 @@
 #include "dt_length.h"
 
 int64_t
-moment_utc_rd_seconds(const moment_t *mt) {
+moment_instant_rd_seconds(const moment_t *mt) {
     return (mt->sec - mt->offset * SECS_PER_MIN);
 }
 
 int
-moment_utc_rd(const moment_t *mt) {
-    return (int)(moment_utc_rd_seconds(mt) / SECS_PER_DAY);
+moment_instant_rd(const moment_t *mt) {
+    return (int)(moment_instant_rd_seconds(mt) / SECS_PER_DAY);
 }
 
 void
-moment_to_utc_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos) {
-    const int64_t sec = moment_utc_rd_seconds(mt);
+moment_to_instant_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos) {
+    const int64_t sec = moment_instant_rd_seconds(mt);
     *rdn = (IV)(sec / SECS_PER_DAY);
     *sod = (IV)(sec % SECS_PER_DAY);
     *nos = mt->nsec;
@@ -183,6 +183,62 @@ THX_moment_from_epoch(pTHX_ int64_t sec, IV nsec, IV offset) {
     r.nsec   = nsec;
     r.offset = offset;
     return r;
+}
+
+moment_t
+THX_moment_from_jd(pTHX_ NV jd, NV epoch, IV precision) {
+    static const NV JD_MIN = -146097 * 50;
+    static const NV JD_MAX =  146097 * 50;
+    NV d1, d2, f1, f2, f, d, s, denom;
+    int64_t sec;
+    int32_t nos;
+
+    if (precision < 0 || precision > 9)
+        croak("Parameter 'precision' is out of the range [0, 9]");
+
+    if (!(jd > JD_MIN && jd < JD_MAX))
+        croak("Parameter 'jd' is out of range");
+
+    if (!(epoch > JD_MIN && epoch < JD_MAX))
+        croak("Parameter 'epoch' is out of range");
+
+    if (jd >= epoch) {
+        d1 = jd;
+        d2 = epoch;
+    }
+    else {
+        d1 = epoch;
+        d2 = jd;
+    }
+
+    f1 = Perl_fmod(d1, 1.0);
+    f2 = Perl_fmod(d2, 1.0);
+    d1 = Perl_floor(d1 - f1);
+    d2 = Perl_floor(d2 - f2);
+
+    f = Perl_fmod(f1 + f2, 1.0);
+    if (f < 0.0)
+        f += 1.0;
+
+    d = d1 + d2 + Perl_floor(f1 + f2 - f);
+    f *= 86400;
+    s = Perl_floor(f);
+
+    if (d < 0 || d > 3652058)
+        croak("Julian Date is out of supported range");
+
+    denom = Perl_pow(10.0, (NV)precision);
+    f = (Perl_floor((f - s) * denom + 0.5) / denom) * 1E9;
+
+    sec = ((int64_t)d - 719162) * 86400 + (int32_t)s;
+    nos = (int32_t)f;
+
+    if (nos >= SECS_PER_NANO) {
+        nos -= SECS_PER_NANO;
+        sec += 1;
+    }
+
+    return THX_moment_from_epoch(aTHX_ sec, nos, 0);
 }
 
 moment_t
@@ -400,7 +456,7 @@ THX_moment_with_offset_same_instant(pTHX_ const moment_t *mt, IV offset) {
     moment_t r;
 
     THX_check_offset(aTHX_ offset);
-    r.sec    = moment_utc_rd_seconds(mt) + offset * SECS_PER_MIN;
+    r.sec    = moment_instant_rd_seconds(mt) + offset * SECS_PER_MIN;
     r.nsec   = mt->nsec;
     r.offset = offset;
     return r;
@@ -626,8 +682,8 @@ THX_moment_with_component(pTHX_ const moment_t *mt, moment_component_t c, IV v) 
 
 int
 moment_compare_instant(const moment_t *m1, const moment_t *m2) {
-    const int64_t s1 = moment_utc_rd_seconds(m1);
-    const int64_t s2 = moment_utc_rd_seconds(m2);
+    const int64_t s1 = moment_instant_rd_seconds(m1);
+    const int64_t s2 = moment_instant_rd_seconds(m2);
     int r;
 
     r = (s1 > s2) - (s1 < s2);
@@ -650,7 +706,7 @@ moment_compare_local(const moment_t *m1, const moment_t *m2) {
 
 int64_t
 moment_epoch(const moment_t *mt) {
-    return (moment_utc_rd_seconds(mt) - UNIX_EPOCH);
+    return (moment_instant_rd_seconds(mt) - UNIX_EPOCH);
 }
 
 int
@@ -735,8 +791,16 @@ moment_jd(const moment_t *mt) {
 
 NV
 moment_mjd(const moment_t *mt) {
-    const int64_t s = moment_utc_rd_seconds(mt);
+    const int64_t s = moment_instant_rd_seconds(mt);
     const int64_t d = (s / SECS_PER_DAY) - 678576;
+    const int64_t n = (s % SECS_PER_DAY) * SECS_PER_NANO + mt->nsec;
+    return (NV)d + (NV)n * (1E-9/60/60/24);
+}
+
+NV
+moment_rd(const moment_t *mt) {
+    const int64_t s = moment_local_rd_seconds(mt);
+    const int64_t d = (s / SECS_PER_DAY);
     const int64_t n = (s % SECS_PER_DAY) * SECS_PER_NANO + mt->nsec;
     return (NV)d + (NV)n * (1E-9/60/60/24);
 }

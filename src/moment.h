@@ -96,6 +96,8 @@ typedef enum {
 moment_t    THX_moment_new(pTHX_ IV Y, IV M, IV D, IV h, IV m, IV s, IV ns, IV offset);
 moment_t    THX_moment_from_epoch(pTHX_ int64_t sec, IV usec, IV offset);
 
+moment_t    THX_moment_from_jd(pTHX_ NV jd, NV epoch, IV precision);
+
 moment_t    THX_moment_with_component(pTHX_ const moment_t *mt, moment_component_t u, IV v);
 moment_t    THX_moment_with_offset_same_instant(pTHX_ const moment_t *mt, IV offset);
 moment_t    THX_moment_with_offset_same_local(pTHX_ const moment_t *mt, IV offset);
@@ -104,12 +106,12 @@ moment_t    THX_moment_with_nanosecond(pTHX_ const moment_t *mt, IV nsec);
 moment_t    THX_moment_plus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
 moment_t    THX_moment_minus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
 
-int64_t     moment_utc_rd_seconds(const moment_t *mt);
+int64_t     moment_instant_rd_seconds(const moment_t *mt);
 int64_t     moment_local_rd_seconds(const moment_t *mt);
 
 dt_t        moment_local_dt(const moment_t *mt);
 
-void        moment_to_utc_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
+void        moment_to_instant_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 void        moment_to_local_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 
 int         moment_compare_instant(const moment_t *m1, const moment_t *m2);
@@ -135,6 +137,7 @@ int64_t     moment_epoch(const moment_t *mt);
 
 NV          moment_jd(const moment_t *mt);
 NV          moment_mjd(const moment_t *mt);
+NV          moment_rd(const moment_t *mt);
 
 int         moment_length_of_year(const moment_t *mt);
 int         moment_length_of_quarter(const moment_t *mt);
@@ -154,6 +157,9 @@ moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 
 #define moment_from_epoch(sec, nsec, offset) \
     THX_moment_from_epoch(aTHX_ sec, nsec, offset)
+
+#define moment_from_jd(jd, epoch, precision) \
+    THX_moment_from_jd(aTHX_ jd, epoch, precision)
 
 #define moment_with_offset_same_instant(self, offset) \
     THX_moment_with_offset_same_instant(aTHX_ self, offset)

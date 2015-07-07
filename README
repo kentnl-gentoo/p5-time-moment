@@ -17,6 +17,8 @@ SYNOPSIS
         $tm = Time::Moment->from_epoch($seconds [, $nanosecond]);
         $tm = Time::Moment->from_object($object);
         $tm = Time::Moment->from_string($string);
+        $tm = Time::Moment->from_jd($jd);
+        $tm = Time::Moment->from_mjd($mjd);
     
         $year         = $tm->year;                          # [1, 9999]
         $quarter      = $tm->quarter;                       # [1, 4]
@@ -41,6 +43,7 @@ SYNOPSIS
     
         $jd           = $tm->jd;
         $mjd          = $tm->mjd;
+        $rd           = $tm->rd;
     
         $tm2          = $tm1->with_year($year);
         $tm2          = $tm1->with_month($month);
@@ -328,6 +331,53 @@ CONSTRUCTORS
     representations is strongly discouraged as they do not conform to the
     ISO 8601 standard.
 
+  from_jd
+        $tm = Time::Moment->from_jd($jd);
+
+    Constructs an instance of "Time::Moment" from the given Julian Date. The
+    Julian Date is a count of days elapsed since -4713-11-24T12Z. The
+    fractional part corresponds to the fraction of the day after noon. The
+    minimum acceptable Julian Date is -1721425.5 which corresponds to
+    0001-01-01T00Z.
+
+    Parameters:
+
+    precision
+            $tm = Time::Moment->from_jd($jd, precision => 3);
+
+        The optional parameter *precision* [0, 9] specifies the number of
+        decimal digits after the decimal point. The default precision is 3.
+
+    epoch
+            $tm = Time::Moment->from_jd($jd, epoch => -1721425.5);
+
+        The optional parameter *epoch* specifies the epoch date relative to
+        0001-01-01T00Z. The epoch date for the Julian Date is -1721425.5.
+
+  from_mjd
+        $tm = Time::Moment->from_mjd($mjd);
+
+    Constructs an instance of "Time::Moment" from the given Modified Julian
+    Date. The Modified Julian Date is a count of days elapsed since
+    1858-11-17T00Z. The fractional part corresponds to the fraction of the
+    day after midnight. The minimum acceptable Modified Julian Date is
+    -678575 which corresponds to 0001-01-01T00Z.
+
+    Parameters:
+
+    precision
+            $tm = Time::Moment->from_mjd($mjd, precision => 3);
+
+        The optional parameter *precision* [0, 9] specifies the number of
+        decimal digits after the decimal point. The default precision is 3.
+
+    epoch
+            $tm = Time::Moment->from_mjd($mjd, epoch => 678575);
+
+        The optional parameter *epoch* specifies the epoch date relative to
+        0001-01-01T00Z. The epoch date for the Modified Julian Date is
+        678575.
+
 INSTANCE METHODS
   year
         $year = $tm->year;
@@ -417,16 +467,23 @@ INSTANCE METHODS
   jd
         $jd = $tm->jd;
 
-    Returns the Julian Date. Julian Date is a count of days elapsed since
-    -4713-11-24T12Z. The fractional part corresponds to the fraction of the
-    day after noon.
+    Returns the Julian Date. The Julian Date is a count of days elapsed
+    since -4713-11-24T12Z. The fractional part corresponds to the fraction
+    of the day after noon.
 
   mjd
         $mjd = $tm->mjd;
 
-    Returns the Modified Julian Date. Modified Julian Date is a count of
+    Returns the Modified Julian Date. The Modified Julian Date is a count of
     days elapsed since 1858-11-17T00Z. The fractional part corresponds to
     the fraction of the day after midnight.
+
+  rd
+        $rd = $tm->rd;
+
+    Returns the Rata Die. The Rata Die is a count of days elapsed since
+    0001-12-31T00. The fractional part corresponds to the fraction of the
+    day after midnight.
 
   with_year
         $tm2 = $tm1->with_year($year);
@@ -965,11 +1022,12 @@ INSTANCE METHODS
     Returns the length of the week of the year in weeks [52, 53].
 
   utc_rd_values
-        ($rd, $sod, $nanosecond) = $tm->utc_rd_values;
+        ($rdn, $sod, $nanosecond) = $tm->utc_rd_values;
 
     Returns a list of three elements:
 
-    $rd The number of days from the Rata Die epoch of 0001-01-01.
+    $rdn
+        The number of integral days from the Rata Die epoch of 0000-12-31.
 
     $sod
         The second of the day [0, 86_399].
@@ -980,15 +1038,16 @@ INSTANCE METHODS
   utc_rd_as_seconds
         $seconds = $tm->utc_rd_as_seconds;
 
-    Returns the number of seconds from the Rata Die epoch of
-    0001-01-01T00:00:00Z.
+    Returns the number of integral seconds from the Rata Die epoch of
+    0000-12-31T00:00:00Z.
 
   local_rd_values
-        ($rd, $sod, $nanosecond) = $tm->local_rd_values;
+        ($rdn, $sod, $nanosecond) = $tm->local_rd_values;
 
     Returns a list of three elements:
 
-    $rd The number of days from the Rata Die epoch of 0001-01-01.
+    $rdn
+        The number of integral days from the Rata Die epoch of 0000-12-31.
 
     $sod
         The second of the day [0, 86_399].
@@ -999,8 +1058,8 @@ INSTANCE METHODS
   local_rd_as_seconds
         $seconds = $tm->local_rd_as_seconds;
 
-    Returns the number of seconds from the Rata Die epoch of
-    0001-01-01T00:00:00.
+    Returns the number of integral seconds from the Rata Die epoch of
+    0000-12-31T00:00:00.
 
 OVERLOADED OPERATORS
   stringification
@@ -1315,15 +1374,8 @@ DIAGNOSTICS
     (F) Usage: %s
         Method called with wrong number of arguments.
 
-    (F) Parameter '%s' is out of the range [%d, %d]
     (F) Parameter '%s' is out of range
-    (F) Parameter 'seconds' is out of range
-        Seconds since the epoch of 1970-01-01T:00:00:00Z (0) is out of the
-        range:
-
-            [ -62135596800 (0001-01-01T00:00:00Z),
-              253402300799 (9999-12-31T23:59:59Z) ]
-
+    (F) Parameter '%s' is out of the range [%d, %d]
     (F) Cannot coerce object of type %s to Time::Moment
     (F) Cannot parse the given string
     (F) %s is not an instance of Time::Moment
