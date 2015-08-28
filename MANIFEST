@@ -63,6 +63,7 @@ t/300_strftime.t
 t/400_with.t
 t/410_with_offset.t
 t/420_at.t
+t/430_length.t
 t/500_storable.t
 t/510_json.t
 t/520_cbor.t

@@ -21,38 +21,33 @@
 #  endif
 #endif
 
-#define SECS_PER_WEEK         604800
-#define SECS_PER_DAY          86400
-#define SECS_PER_HOUR         3600
-#define SECS_PER_MIN          60
-#define SECS_PER_MILLI        1000
-#define SECS_PER_MICRO        1000000
-#define SECS_PER_NANO         1000000000
+#define SECS_PER_DAY      86400
+#define NANOS_PER_SEC     1000000000
 
-#define MIN_UNIT_YEARS        INT64_C(-10000)
-#define MAX_UNIT_YEARS        INT64_C(10000)
-#define MIN_UNIT_MONTHS       INT64_C(-120000)
-#define MAX_UNIT_MONTHS       INT64_C(120000)
-#define MIN_UNIT_WEEKS        INT64_C(-521775)
-#define MAX_UNIT_WEEKS        INT64_C(521775)
-#define MIN_UNIT_DAYS         INT64_C(-3652425)
-#define MAX_UNIT_DAYS         INT64_C(3652425)
-#define MIN_UNIT_HOURS        INT64_C(-87658200)
-#define MAX_UNIT_HOURS        INT64_C(87658200)
-#define MIN_UNIT_MINUTES      INT64_C(-5259492000)
-#define MAX_UNIT_MINUTES      INT64_C(5259492000)
-#define MIN_UNIT_SECONDS      INT64_C(-315569520000)
-#define MAX_UNIT_SECONDS      INT64_C(315569520000)
-#define MIN_UNIT_MILLISECONDS INT64_C(-315569520000000)
-#define MAX_UNIT_MILLISECONDS INT64_C(315569520000000)
-#define MIN_UNIT_MICROSECONDS INT64_C(-315569520000000000)
-#define MAX_UNIT_MICROSECONDS INT64_C(315569520000000000)
+#define MIN_UNIT_YEARS      INT64_C(-10000)
+#define MAX_UNIT_YEARS      INT64_C(10000)
+#define MIN_UNIT_MONTHS     INT64_C(-120000)
+#define MAX_UNIT_MONTHS     INT64_C(120000)
+#define MIN_UNIT_WEEKS      INT64_C(-521775)
+#define MAX_UNIT_WEEKS      INT64_C(521775)
+#define MIN_UNIT_DAYS       INT64_C(-3652425)
+#define MAX_UNIT_DAYS       INT64_C(3652425)
+#define MIN_UNIT_HOURS      INT64_C(-87658200)
+#define MAX_UNIT_HOURS      INT64_C(87658200)
+#define MIN_UNIT_MINUTES    INT64_C(-5259492000)
+#define MAX_UNIT_MINUTES    INT64_C(5259492000)
+#define MIN_UNIT_SECONDS    INT64_C(-315569520000)
+#define MAX_UNIT_SECONDS    INT64_C(315569520000)
+#define MIN_UNIT_MILLIS     INT64_C(-315569520000000)
+#define MAX_UNIT_MILLIS     INT64_C(315569520000000)
+#define MIN_UNIT_MICROS     INT64_C(-315569520000000000)
+#define MAX_UNIT_MICROS     INT64_C(315569520000000000)
 
-#define MIN_RANGE             INT64_C(86400)        /* 0001-01-01T00:00:00Z */
-#define MAX_RANGE             INT64_C(315537983999) /* 9999-12-31T23:59:59Z */
-#define UNIX_EPOCH            INT64_C(62135683200)  /* 1970-01-01T00:00:00Z */
-#define MIN_EPOCH_SEC         INT64_C(-62135596800) /* 0001-01-01T00:00:00Z */
-#define MAX_EPOCH_SEC         INT64_C(253402300799) /* 9999-12-31T23:59:59Z */
+#define MIN_RANGE           INT64_C(86400)        /* 0001-01-01T00:00:00Z */
+#define MAX_RANGE           INT64_C(315537983999) /* 9999-12-31T23:59:59Z */
+#define UNIX_EPOCH          INT64_C(62135683200)  /* 1970-01-01T00:00:00Z */
+#define MIN_EPOCH_SEC       INT64_C(-62135596800) /* 0001-01-01T00:00:00Z */
+#define MAX_EPOCH_SEC       INT64_C(253402300799) /* 9999-12-31T23:59:59Z */
 
 #define VALID_EPOCH_SEC(s) \
     (s >= MIN_EPOCH_SEC && s <= MAX_EPOCH_SEC)
@@ -71,37 +66,39 @@ typedef enum {
     MOMENT_UNIT_HOURS,
     MOMENT_UNIT_MINUTES,
     MOMENT_UNIT_SECONDS,
-    MOMENT_UNIT_MILLISECONDS,
-    MOMENT_UNIT_MICROSECONDS,
-    MOMENT_UNIT_NANOSECONDS,
+    MOMENT_UNIT_MILLIS,
+    MOMENT_UNIT_MICROS,
+    MOMENT_UNIT_NANOS,
 } moment_unit_t;
 
 typedef enum {
     MOMENT_COMPONENT_YEAR=0,
-    MOMENT_COMPONENT_MONTH,
-    MOMENT_COMPONENT_WEEK,
+    MOMENT_COMPONENT_MONTH_OF_YEAR,
+    MOMENT_COMPONENT_WEEK_OF_YEAR,
     MOMENT_COMPONENT_DAY_OF_YEAR,
     MOMENT_COMPONENT_DAY_OF_QUARTER,
     MOMENT_COMPONENT_DAY_OF_MONTH,
     MOMENT_COMPONENT_DAY_OF_WEEK,
-    MOMENT_COMPONENT_HOUR,
-    MOMENT_COMPONENT_MINUTE,
-    MOMENT_COMPONENT_SECOND,
+    MOMENT_COMPONENT_HOUR_OF_DAY,
+    MOMENT_COMPONENT_MINUTE_OF_HOUR,
+    MOMENT_COMPONENT_MINUTE_OF_DAY,
+    MOMENT_COMPONENT_SECOND_OF_MINUTE,
     MOMENT_COMPONENT_SECOND_OF_DAY,
-    MOMENT_COMPONENT_MILLISECOND,
-    MOMENT_COMPONENT_MICROSECOND,
-    MOMENT_COMPONENT_NANOSECOND,
+    MOMENT_COMPONENT_MILLI_OF_SECOND,
+    MOMENT_COMPONENT_MILLI_OF_DAY,
+    MOMENT_COMPONENT_MICRO_OF_SECOND,
+    MOMENT_COMPONENT_NANO_OF_SECOND,
 } moment_component_t;
 
 moment_t    THX_moment_new(pTHX_ IV Y, IV M, IV D, IV h, IV m, IV s, IV ns, IV offset);
 moment_t    THX_moment_from_epoch(pTHX_ int64_t sec, IV usec, IV offset);
+moment_t    THX_moment_from_epoch_nv(pTHX_ NV sec);
 
 moment_t    THX_moment_from_jd(pTHX_ NV jd, NV epoch, IV precision);
 
 moment_t    THX_moment_with_component(pTHX_ const moment_t *mt, moment_component_t u, IV v);
 moment_t    THX_moment_with_offset_same_instant(pTHX_ const moment_t *mt, IV offset);
 moment_t    THX_moment_with_offset_same_local(pTHX_ const moment_t *mt, IV offset);
-moment_t    THX_moment_with_nanosecond(pTHX_ const moment_t *mt, IV nsec);
 
 moment_t    THX_moment_plus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
 moment_t    THX_moment_minus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
@@ -127,9 +124,11 @@ int         moment_day_of_month(const moment_t *mt);
 int         moment_day_of_week(const moment_t *mt);
 int         moment_hour(const moment_t *mt);
 int         moment_minute(const moment_t *mt);
+int         moment_minute_of_day(const moment_t *mt);
 int         moment_second(const moment_t *mt);
 int         moment_second_of_day(const moment_t *mt);
 int         moment_millisecond(const moment_t *mt);
+int         moment_millisecond_of_day(const moment_t *mt);
 int         moment_microsecond(const moment_t *mt);
 int         moment_nanosecond(const moment_t *mt);
 int         moment_offset(const moment_t *mt);
@@ -157,6 +156,9 @@ moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 
 #define moment_from_epoch(sec, nsec, offset) \
     THX_moment_from_epoch(aTHX_ sec, nsec, offset)
+
+#define moment_from_epoch_nv(sec) \
+    THX_moment_from_epoch_nv(aTHX_ sec)
 
 #define moment_from_jd(jd, epoch, precision) \
     THX_moment_from_jd(aTHX_ jd, epoch, precision)

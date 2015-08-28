@@ -2,16 +2,16 @@ package Time::Moment;
 use strict;
 use warnings;
 
-use Carp        qw[];
-use Time::HiRes qw[];
+use Carp qw[];
 
 BEGIN {
-    our $VERSION = '0.25';
+    our $VERSION = '0.26';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
 BEGIN {
     unless (exists &Time::Moment::now) {
+        require Time::HiRes;
         eval sprintf <<'EOC', __FILE__;
 # line 17 %s
 
