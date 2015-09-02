@@ -154,8 +154,8 @@ THX_check_millisecond(pTHX_ IV v) {
 
 static void
 THX_check_millisecond_of_day(pTHX_ IV v) {
-    if (v < 0 || v > 86399999)
-        croak("Parameter 'millisecond' is out of the range [0, 86_399_999]");
+    if (v < 0 || v > 86400000)
+        croak("Parameter 'millisecond' is out of the range [0, 86_400_000]");
 }
 
 static void
@@ -304,8 +304,8 @@ THX_moment_from_jd(pTHX_ NV jd, NV epoch, IV precision) {
     f *= 86400;
     s = Perl_floor(f);
 
-    if (d < 0 || d > 3652058)
-        croak("Julian Date is out of supported range");
+    if (d < 1 || d > 3652059)
+        croak("Serial date is out of supported range");
 
     denom = Perl_pow(10.0, (NV)precision);
     f = (Perl_floor((f - s) * denom + 0.5) / denom) * 1E9;
@@ -768,6 +768,11 @@ moment_compare_local(const moment_t *m1, const moment_t *m2) {
     if (r == 0)
         r = (m1->nsec > m2->nsec) - (m1->nsec < m2->nsec);
     return r;
+}
+
+bool
+moment_equals(const moment_t *m1, const moment_t *m2) {
+    return memcmp(m1, m2, sizeof(moment_t)) == 0;
 }
 
 int64_t

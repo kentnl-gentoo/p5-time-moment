@@ -1,3 +1,11 @@
+0.27 2015-09-02
+  - Added ->with method
+  - Added Time::Moment::Adjusters
+  - Added following examples to eg/
+    - eg/cal.pl
+    - eg/excel.pl
+    - eg/us_federal_holidays.pl
+
 0.26 2015-08-28
   - The optional epoch date in ->from_jd and ->from_mjd has changed from
     0001-01-01T00Z to 0000-12-31T00Z (Rata Die).
@@ -10,9 +18,6 @@
     - with_millisecond_of_day
   - Internals has been refactored to ease maintainability
   - Added more test cases
-  - Applied a patch by Vitaliy V. Tokarev (gh0stwizard) which fixes a build 
-    issue on solaris, #15
-
 
 0.25 2015-07-07
   - Added following methods to the API:
