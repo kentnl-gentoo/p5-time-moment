@@ -678,6 +678,23 @@ with_year(self, value)
     RETVAL
 
 moment_t
+with_precision(self, precision)
+    const moment_t *self
+    IV precision
+  PREINIT:
+    dSTASH_INVOCANT;
+  CODE:
+    RETVAL = moment_with_precision(self, precision);
+    if (moment_equals(self, &RETVAL))
+        XSRETURN(1);
+    if (sv_reusable(ST(0))) {
+        sv_set_moment(ST(0), &RETVAL);
+        XSRETURN(1);
+    }
+  OUTPUT:
+    RETVAL
+
+moment_t
 with_offset_same_instant(self, offset)
     const moment_t *self
     IV offset
@@ -749,7 +766,7 @@ year(self)
     XSRETURN_IV(v);
 
 void
-jd(self)
+jd(self, ...)
     const moment_t *self
   ALIAS:
     Time::Moment::jd  = 0
@@ -757,11 +774,27 @@ jd(self)
     Time::Moment::rd  = 2
   PREINIT:
     NV v = 0;
+    IV precision = 3;
+    moment_t adjusted;
+    I32 i;
   PPCODE:
+    if (((items - 1) % 2) != 0)
+        croak("Odd number of elements in named parameters");
+
+    for (i = 1; i < items; i += 2) {
+        switch (sv_moment_param(ST(i))) {
+            case MOMENT_PARAM_PRECISION:
+                precision = SvIV(ST(i+1));
+                break;
+            default:
+                croak("Unrecognised parameter: '%"SVf"'", ST(i));
+        }
+    }
+    adjusted = moment_with_precision(self, precision);
     switch (ix) {
-        case 0: v = moment_jd(self);    break;
-        case 1: v = moment_mjd(self);   break;
-        case 2: v = moment_rd(self);    break;
+        case 0: v = moment_jd(&adjusted);   break;
+        case 1: v = moment_mjd(&adjusted);  break;
+        case 2: v = moment_rd(&adjusted);   break;
     }
     XSRETURN_NV(v);
 
