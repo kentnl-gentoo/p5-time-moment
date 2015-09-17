@@ -620,6 +620,23 @@ minus_seconds(self, value)
     RETVAL
 
 void
+delta_hours(self, other)
+    const moment_t *self
+    const moment_t *other
+  PREINIT:
+    int64_t delta;
+  ALIAS:
+    Time::Moment::delta_hours        = MOMENT_UNIT_HOURS
+    Time::Moment::delta_minutes      = MOMENT_UNIT_MINUTES
+    Time::Moment::delta_seconds      = MOMENT_UNIT_SECONDS
+    Time::Moment::delta_milliseconds = MOMENT_UNIT_MILLIS
+    Time::Moment::delta_microseconds = MOMENT_UNIT_MICROS
+    Time::Moment::delta_nanoseconds  = MOMENT_UNIT_NANOS
+  PPCODE:
+    delta = moment_delta_unit(self, other, (moment_unit_t)ix);
+    XSRETURN_I64V(delta);
+
+void
 with(self, adjuster)
     const moment_t *self
     SV *adjuster
@@ -646,45 +663,31 @@ with(self, adjuster)
 moment_t
 with_year(self, value)
     const moment_t *self
-    IV value
+    I64V value
   PREINIT:
     dSTASH_INVOCANT;
   ALIAS:
-    Time::Moment::with_year               = MOMENT_COMPONENT_YEAR
-    Time::Moment::with_month              = MOMENT_COMPONENT_MONTH_OF_YEAR
-    Time::Moment::with_week               = MOMENT_COMPONENT_WEEK_OF_YEAR
-    Time::Moment::with_day_of_year        = MOMENT_COMPONENT_DAY_OF_YEAR
-    Time::Moment::with_day_of_quarter     = MOMENT_COMPONENT_DAY_OF_QUARTER
-    Time::Moment::with_day_of_month       = MOMENT_COMPONENT_DAY_OF_MONTH
-    Time::Moment::with_day_of_week        = MOMENT_COMPONENT_DAY_OF_WEEK
-    Time::Moment::with_hour               = MOMENT_COMPONENT_HOUR_OF_DAY
-    Time::Moment::with_minute             = MOMENT_COMPONENT_MINUTE_OF_HOUR
-    Time::Moment::with_minute_of_day      = MOMENT_COMPONENT_MINUTE_OF_DAY
-    Time::Moment::with_second             = MOMENT_COMPONENT_SECOND_OF_MINUTE
-    Time::Moment::with_second_of_day      = MOMENT_COMPONENT_SECOND_OF_DAY
-    Time::Moment::with_millisecond        = MOMENT_COMPONENT_MILLI_OF_SECOND
-    Time::Moment::with_millisecond_of_day = MOMENT_COMPONENT_MILLI_OF_DAY
-    Time::Moment::with_microsecond        = MOMENT_COMPONENT_MICRO_OF_SECOND
-    Time::Moment::with_nanosecond         = MOMENT_COMPONENT_NANO_OF_SECOND
+    Time::Moment::with_year               = MOMENT_FIELD_YEAR
+    Time::Moment::with_month              = MOMENT_FIELD_MONTH_OF_YEAR
+    Time::Moment::with_week               = MOMENT_FIELD_WEEK_OF_YEAR
+    Time::Moment::with_day_of_year        = MOMENT_FIELD_DAY_OF_YEAR
+    Time::Moment::with_day_of_quarter     = MOMENT_FIELD_DAY_OF_QUARTER
+    Time::Moment::with_day_of_month       = MOMENT_FIELD_DAY_OF_MONTH
+    Time::Moment::with_day_of_week        = MOMENT_FIELD_DAY_OF_WEEK
+    Time::Moment::with_hour               = MOMENT_FIELD_HOUR_OF_DAY
+    Time::Moment::with_minute             = MOMENT_FIELD_MINUTE_OF_HOUR
+    Time::Moment::with_minute_of_day      = MOMENT_FIELD_MINUTE_OF_DAY
+    Time::Moment::with_second             = MOMENT_FIELD_SECOND_OF_MINUTE
+    Time::Moment::with_second_of_day      = MOMENT_FIELD_SECOND_OF_DAY
+    Time::Moment::with_millisecond        = MOMENT_FIELD_MILLI_OF_SECOND
+    Time::Moment::with_millisecond_of_day = MOMENT_FIELD_MILLI_OF_DAY
+    Time::Moment::with_microsecond        = MOMENT_FIELD_MICRO_OF_SECOND
+    Time::Moment::with_microsecond_of_day = MOMENT_FIELD_MICRO_OF_DAY
+    Time::Moment::with_nanosecond         = MOMENT_FIELD_NANO_OF_SECOND
+    Time::Moment::with_nanosecond_of_day  = MOMENT_FIELD_NANO_OF_DAY
+    Time::Moment::with_precision          = MOMENT_FIELD_PRECISION
   CODE:
-    RETVAL = moment_with_component(self, (moment_component_t)ix, value);
-    if (moment_equals(self, &RETVAL))
-        XSRETURN(1);
-    if (sv_reusable(ST(0))) {
-        sv_set_moment(ST(0), &RETVAL);
-        XSRETURN(1);
-    }
-  OUTPUT:
-    RETVAL
-
-moment_t
-with_precision(self, precision)
-    const moment_t *self
-    IV precision
-  PREINIT:
-    dSTASH_INVOCANT;
-  CODE:
-    RETVAL = moment_with_precision(self, precision);
+    RETVAL = moment_with_field(self, (moment_component_t)ix, value);
     if (moment_equals(self, &RETVAL))
         XSRETURN(1);
     if (sv_reusable(ST(0))) {
@@ -766,6 +769,27 @@ year(self)
     XSRETURN_IV(v);
 
 void
+epoch(self)
+    const moment_t *self
+  ALIAS:
+    Time::Moment::epoch                 = 0
+    Time::Moment::utc_rd_as_seconds     = 1
+    Time::Moment::local_rd_as_seconds   = 2
+    Time::Moment::microsecond_of_day    = 3
+    Time::Moment::nanosecond_of_day     = 4
+  PREINIT:
+    int64_t v = 0;
+  PPCODE:
+    switch (ix) {
+        case 0: v = moment_epoch(self);                 break;
+        case 1: v = moment_instant_rd_seconds(self);    break;
+        case 2: v = moment_local_rd_seconds(self);      break;
+        case 3: v = moment_microsecond_of_day(self);    break;
+        case 4: v = moment_nanosecond_of_day(self);     break;
+    }
+    XSRETURN_I64V(v);
+
+void
 jd(self, ...)
     const moment_t *self
   ALIAS:
@@ -816,23 +840,6 @@ length_of_year(self)
         case 3: v = moment_length_of_week_year(self);   break;
     }
     XSRETURN_IV(v);
-
-void
-epoch(self)
-    const moment_t *self
-  ALIAS:
-    Time::Moment::epoch                 = 0
-    Time::Moment::utc_rd_as_seconds     = 1
-    Time::Moment::local_rd_as_seconds   = 2
-  PREINIT:
-    int64_t v = 0;
-  PPCODE:
-    switch (ix) {
-        case 0: v = moment_epoch(self);                 break;
-        case 1: v = moment_instant_rd_seconds(self);    break;
-        case 2: v = moment_local_rd_seconds(self);      break;
-    }
-    XSRETURN_I64V(v);
 
 void
 utc_rd_values(self)

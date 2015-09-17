@@ -58,6 +58,11 @@ typedef struct {
     int32_t offset;
 } moment_t;
 
+typedef struct {
+    int64_t sec;
+    int32_t nsec;
+} moment_duration_t;
+
 typedef enum {
     MOMENT_UNIT_YEARS=0,
     MOMENT_UNIT_MONTHS,
@@ -72,22 +77,25 @@ typedef enum {
 } moment_unit_t;
 
 typedef enum {
-    MOMENT_COMPONENT_YEAR=0,
-    MOMENT_COMPONENT_MONTH_OF_YEAR,
-    MOMENT_COMPONENT_WEEK_OF_YEAR,
-    MOMENT_COMPONENT_DAY_OF_YEAR,
-    MOMENT_COMPONENT_DAY_OF_QUARTER,
-    MOMENT_COMPONENT_DAY_OF_MONTH,
-    MOMENT_COMPONENT_DAY_OF_WEEK,
-    MOMENT_COMPONENT_HOUR_OF_DAY,
-    MOMENT_COMPONENT_MINUTE_OF_HOUR,
-    MOMENT_COMPONENT_MINUTE_OF_DAY,
-    MOMENT_COMPONENT_SECOND_OF_MINUTE,
-    MOMENT_COMPONENT_SECOND_OF_DAY,
-    MOMENT_COMPONENT_MILLI_OF_SECOND,
-    MOMENT_COMPONENT_MILLI_OF_DAY,
-    MOMENT_COMPONENT_MICRO_OF_SECOND,
-    MOMENT_COMPONENT_NANO_OF_SECOND,
+    MOMENT_FIELD_YEAR=0,
+    MOMENT_FIELD_MONTH_OF_YEAR,
+    MOMENT_FIELD_WEEK_OF_YEAR,
+    MOMENT_FIELD_DAY_OF_YEAR,
+    MOMENT_FIELD_DAY_OF_QUARTER,
+    MOMENT_FIELD_DAY_OF_MONTH,
+    MOMENT_FIELD_DAY_OF_WEEK,
+    MOMENT_FIELD_HOUR_OF_DAY,
+    MOMENT_FIELD_MINUTE_OF_HOUR,
+    MOMENT_FIELD_MINUTE_OF_DAY,
+    MOMENT_FIELD_SECOND_OF_MINUTE,
+    MOMENT_FIELD_SECOND_OF_DAY,
+    MOMENT_FIELD_MILLI_OF_SECOND,
+    MOMENT_FIELD_MILLI_OF_DAY,
+    MOMENT_FIELD_MICRO_OF_SECOND,
+    MOMENT_FIELD_MICRO_OF_DAY,
+    MOMENT_FIELD_NANO_OF_SECOND,
+    MOMENT_FIELD_NANO_OF_DAY,
+    MOMENT_FIELD_PRECISION,
 } moment_component_t;
 
 moment_t    THX_moment_new(pTHX_ IV Y, IV M, IV D, IV h, IV m, IV s, IV ns, IV offset);
@@ -96,13 +104,15 @@ moment_t    THX_moment_from_epoch_nv(pTHX_ NV sec);
 
 moment_t    THX_moment_from_jd(pTHX_ NV jd, NV epoch, IV precision);
 
-moment_t    THX_moment_with_component(pTHX_ const moment_t *mt, moment_component_t u, IV v);
+moment_t    THX_moment_with_field(pTHX_ const moment_t *mt, moment_component_t u, int64_t v);
 moment_t    THX_moment_with_offset_same_instant(pTHX_ const moment_t *mt, IV offset);
 moment_t    THX_moment_with_offset_same_local(pTHX_ const moment_t *mt, IV offset);
-moment_t    THX_moment_with_precision(pTHX_ const moment_t *mt, IV precision);
+moment_t    THX_moment_with_precision(pTHX_ const moment_t *mt, int64_t precision);
 
 moment_t    THX_moment_plus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
 moment_t    THX_moment_minus_unit(pTHX_ const moment_t *mt, moment_unit_t u, int64_t v);
+
+int64_t     THX_moment_delta_unit(pTHX_ const moment_t *mt1, const moment_t *mt2, moment_unit_t u);
 
 int64_t     moment_instant_rd_seconds(const moment_t *mt);
 int64_t     moment_local_rd_seconds(const moment_t *mt);
@@ -132,7 +142,9 @@ int         moment_second_of_day(const moment_t *mt);
 int         moment_millisecond(const moment_t *mt);
 int         moment_millisecond_of_day(const moment_t *mt);
 int         moment_microsecond(const moment_t *mt);
+int64_t     moment_microsecond_of_day(const moment_t *mt);
 int         moment_nanosecond(const moment_t *mt);
+int64_t     moment_nanosecond_of_day(const moment_t *mt);
 int         moment_offset(const moment_t *mt);
 int64_t     moment_epoch(const moment_t *mt);
 
@@ -171,7 +183,7 @@ moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 #define moment_with_offset_same_local(self, offset) \
     THX_moment_with_offset_same_local(aTHX_ self, offset)
 
-#define moment_with_precision(self,precision) \
+#define moment_with_precision(self, precision) \
     THX_moment_with_precision(aTHX_ self, precision)
 
 #define moment_with_nanosecond(self, nsec) \
@@ -183,8 +195,11 @@ moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 #define moment_minus_unit(self, unit, v) \
     THX_moment_minus_unit(aTHX_ self, unit, v)
 
-#define moment_with_component(self, component, v) \
-    THX_moment_with_component(aTHX_ self, component, v)
+#define moment_delta_unit(self, other, unit) \
+    THX_moment_delta_unit(aTHX_ self, other, unit)
+
+#define moment_with_field(self, component, v) \
+    THX_moment_with_field(aTHX_ self, component, v)
 
 #define moment_at_utc(self) \
     THX_moment_at_utc(aTHX_ self)

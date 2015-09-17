@@ -38,14 +38,16 @@ SYNOPSIS
         $millisecond  = $tm->millisecond;               # [0, 999]
         $millisecond  = $tm->millisecond_of_day;        # [0, 86_399_999]
         $microsecond  = $tm->microsecond;               # [0, 999_999]
+        $microsecond  = $tm->microsecond_of_day;        # [0, 86_399_999_999]
         $nanosecond   = $tm->nanosecond;                # [0, 999_999_999]
+        $microsecond  = $tm->nanosecond_of_day;         # [0, 86_399_999_999_999]
     
         $epoch        = $tm->epoch;
         $offset       = $tm->offset;                    # [-1080, 1080] (±18:00)
     
-        $jd           = $tm->jd;
-        $mjd          = $tm->mjd;
-        $rd           = $tm->rd;
+        $jd           = $tm->jd;                        # Julian Date
+        $mjd          = $tm->mjd;                       # Modified Julian Date
+        $rd           = $tm->rd;                        # Rata Die
     
         $tm2          = $tm1->with($adjuster);
         $tm2          = $tm1->with_year($year);
@@ -63,7 +65,9 @@ SYNOPSIS
         $tm2          = $tm1->with_millisecond($millisecond);
         $tm2          = $tm1->with_millisecond_of_day($millisecond);
         $tm2          = $tm1->with_microsecond($microsecond);
+        $tm2          = $tm1->with_microsecond_of_day($microsecond);
         $tm2          = $tm1->with_nanosecond($nanosecond);
+        $tm2          = $tm1->with_nanosecond_of_day($nanosecond);
     
         $tm2          = $tm1->with_offset_same_instant($offset);
         $tm2          = $tm1->with_offset_same_local($offset);
@@ -89,6 +93,13 @@ SYNOPSIS
         $tm2          = $tm1->minus_milliseconds($milliseconds);
         $tm2          = $tm1->minus_microseconds($microseconds);
         $tm2          = $tm1->minus_nanoseconds($nanoseconds);
+    
+        $hours        = $tm1->delta_hours($tm2);
+        $minutes      = $tm1->delta_minutes($tm2);
+        $seconds      = $tm1->delta_seconds($tm2);
+        $milliseconds = $tm1->delta_milliseconds($tm2);
+        $microseconds = $tm1->delta_microseconds($tm2);
+        $nanoseconds  = $tm1->delta_nanoseconds($tm2);
     
         $tm2          = $tm1->at_utc;
     
@@ -201,9 +212,8 @@ CONSTRUCTORS
     Constructs an instance of "Time::Moment" from the given *seconds* from
     the epoch of 1970-01-01T00Z. The optional parameter *nanosecond*
     specifies the nanosecond of the second [0, 999_999_999]. Fractional
-    seconds is supported if the constructor is invoked with *seconds* only:
-
-        $tm = Time::Moment->from_epoch(0.123456); # 1970-01-01T00:00:00.123456Z
+    seconds is supported if the constructor is invoked with *seconds* only,
+    fractional seconds is rounded to the nearest microsecond.
 
   from_object
         $tm = Time::Moment->from_object($object);
@@ -349,8 +359,8 @@ CONSTRUCTORS
     precision
             $tm = Time::Moment->from_jd($jd, precision => 3);
 
-        The optional parameter *precision* [0, 9] specifies the number of
-        decimal digits after the decimal point. The default precision is 3.
+        The optional parameter *precision* [0, 9] specifies the precision of
+        the fractional seconds. The default precision is 3 (milliseconds).
 
     epoch
             $tm = Time::Moment->from_jd($jd, epoch => -1721424.5);
@@ -373,8 +383,8 @@ CONSTRUCTORS
     precision
             $tm = Time::Moment->from_mjd($mjd, precision => 3);
 
-        The optional parameter *precision* [0, 9] specifies the number of
-        decimal digits after the decimal point. The default precision is 3.
+        The optional parameter *precision* [0, 9] specifies the precision of
+        the fractional seconds. The default precision is 3 (milliseconds).
 
     epoch
             $tm = Time::Moment->from_mjd($mjd, epoch => 678576);
@@ -464,10 +474,20 @@ INSTANCE METHODS
 
     Returns the microsecond of the second [0, 999_999].
 
+  microsecond_of_day
+        $microsecond = $tm->microsecond_of_day;
+
+    Returns the microsecond of the day [0, 86_399_999_999].
+
   nanosecond
         $nanosecond = $tm->nanosecond;
 
     Returns the nanosecond of the second [0, 999_999_999].
+
+  nanosecond_of_day
+        $nanosecond = $tm->nanosecond_of_day;
+
+    Returns the nanosecond of the day [0, 86_399_999_999_999].
 
   epoch
         $epoch = $tm->epoch;
@@ -486,7 +506,7 @@ INSTANCE METHODS
     Returns the Julian Date. The Julian Date is a count of days elapsed
     since -4713-11-24T12Z. The fractional part corresponds to the fraction
     of the day after noon. The optional named parameter *precision* [0, 9]
-    specifies the precision of the fractional second. The default precision
+    specifies the precision of the fractional seconds. The default precision
     is 3 (milliseconds).
 
   mjd
@@ -496,8 +516,8 @@ INSTANCE METHODS
     Returns the Modified Julian Date. The Modified Julian Date is a count of
     days elapsed since 1858-11-17T00Z. The fractional part corresponds to
     the fraction of the day after midnight. The optional named parameter
-    *precision* [0, 9] specifies the precision of the fractional second. The
-    default precision is 3 (milliseconds).
+    *precision* [0, 9] specifies the precision of the fractional seconds.
+    The default precision is 3 (milliseconds).
 
   rd
         $rd = $tm->rd;
@@ -506,7 +526,7 @@ INSTANCE METHODS
     Returns the Rata Die. The Rata Die is a count of days elapsed since
     0000-12-31T00. The fractional part corresponds to the fraction of the
     day after midnight. The optional named parameter *precision* [0, 9]
-    specifies the precision of the fractional second. The default precision
+    specifies the precision of the fractional seconds. The default precision
     is 3 (milliseconds).
 
   with
@@ -514,7 +534,7 @@ INSTANCE METHODS
 
     Returns a copy of this instance adjusted by the given *adjuster*. The
     adjuster is a CODE reference invoked with an instance of Time::Moment
-    and is expected to return an instance of Time::Moment. See
+    and is expected to return an instance of Time::Moment. Please see
     Time::Moment::Adjusters for available adjusters.
 
   with_year
@@ -617,11 +637,24 @@ INSTANCE METHODS
     second [0, 999_999] altered. The nanosecond of the second is replaced
     with the given *microsecond* multiplied by 1,000.
 
+  with_microsecond_of_day
+        $tm2 = $tm1->with_microsecond_of_day($microsecond);
+
+    Returns a copy of this instance with the given *microsecond* of the day
+    [0, 86_400_000_000] altered. The lower-order time elements are
+    truncated.
+
   with_nanosecond
         $tm2 = $tm1->with_nanosecond($nanosecond);
 
     Returns a copy of this instance with the given *nanosecond* of the
     second [0, 999_999_999] altered.
+
+  with_nanosecond_of_day
+        $tm2 = $tm1->with_nanosecond_of_day($nanosecond);
+
+    Returns a copy of this instance with the given *nanosecond* of the day
+    [0, 86_400_000_000_000] altered.
 
   with_offset_same_instant
         $tm2 = $tm1->with_offset_same_instant($offset);
@@ -648,7 +681,7 @@ INSTANCE METHODS
   plus_years
         $tm2 = $tm1->plus_years($years);
 
-    Returns a copy of this instance with the given number of years added.
+    Returns a copy of this instance with the given number of *years* added.
     The day of the month of the date is unchanged unless the day does not
     exist in the resulting month. In that case, the day is set to the last
     day of the resulting month. For example, 2012-02-29 plus one year
@@ -657,7 +690,7 @@ INSTANCE METHODS
   plus_months
         $tm2 = $tm1->plus_months($months);
 
-    Returns a copy of this instance with the given number of months added.
+    Returns a copy of this instance with the given number of *months* added.
     The day of the month of the date is unchanged unless the day does not
     exist in the resulting month. In that case, the day is set to the last
     day of the resulting month. For example, 2013-01-31 plus one month
@@ -666,50 +699,52 @@ INSTANCE METHODS
   plus_weeks
         $tm2 = $tm1->plus_weeks($weeks);
 
-    Returns a copy of this instance with the given number of weeks added.
+    Returns a copy of this instance with the given number of *weeks* added.
 
   plus_days
         $tm2 = $tm1->plus_days($days);
 
-    Returns a copy of this instance with the given number of days added.
+    Returns a copy of this instance with the given number of *days* added.
 
   plus_hours
         $tm2 = $tm1->plus_hours($hours);
 
-    Returns a copy of this instance with the given number of hours added.
+    Returns a copy of this instance with the given number of *hours* added.
 
   plus_minutes
         $tm2 = $tm1->plus_minutes($minutes);
 
-    Returns a copy of this instance with the given number of minutes added.
+    Returns a copy of this instance with the given number of *minutes*
+    added.
 
   plus_seconds
         $tm2 = $tm1->plus_seconds($seconds);
 
-    Returns a copy of this instance with the given number of seconds added.
+    Returns a copy of this instance with the given number of *seconds*
+    added.
 
   plus_milliseconds
         $tm2 = $tm1->plus_milliseconds($milliseconds);
 
-    Returns a copy of this instance with the given number of milliseconds
+    Returns a copy of this instance with the given number of *milliseconds*
     added.
 
   plus_microseconds
         $tm2 = $tm1->plus_microseconds($microseconds);
 
-    Returns a copy of this instance with the given number of microseconds
+    Returns a copy of this instance with the given number of *microseconds*
     added.
 
   plus_nanoseconds
         $tm2 = $tm1->plus_nanoseconds($nanoeconds);
 
-    Returns a copy of this instance with the given number of nanoseconds
+    Returns a copy of this instance with the given number of *nanoseconds*
     added.
 
   minus_years
         $tm2 = $tm1->minus_years($years);
 
-    Returns a copy of this instance with the given number of years
+    Returns a copy of this instance with the given number of *years*
     subtracted. The day of the month of the date is unchanged unless the day
     does not exist in the resulting month. In that case, the day is set to
     the last day of the resulting month. For example, 2012-02-29 minus one
@@ -718,7 +753,7 @@ INSTANCE METHODS
   minus_months
         $tm2 = $tm1->minus_months($months);
 
-    Returns a copy of this instance with the given number of months
+    Returns a copy of this instance with the given number of *months*
     subtracted. The day of the month of the date is unchanged unless the day
     does not exist in the resulting month. In that case, the day is set to
     the last day of the resulting month. For example, 2013-03-31 minus one
@@ -728,50 +763,92 @@ INSTANCE METHODS
   minus_weeks
         $tm2 = $tm1->minus_weeks($weeks);
 
-    Returns a copy of this instance with the given number of weeks
+    Returns a copy of this instance with the given number of *weeks*
     subtracted.
 
   minus_days
         $tm2 = $tm1->minus_days($days);
 
-    Returns a copy of this instance with the given number of days
+    Returns a copy of this instance with the given number of *days*
     subtracted.
 
   minus_hours
         $tm2 = $tm1->minus_hours($hours);
 
-    Returns a copy of this instance with the given number of hours
+    Returns a copy of this instance with the given number of *hours*
     subtracted.
 
   minus_minutes
         $tm2 = $tm1->minus_minutes($minutes);
 
-    Returns a copy of this instance with the given number of minutes
+    Returns a copy of this instance with the given number of *minutes*
     subtracted.
 
   minus_seconds
         $tm2 = $tm1->minus_seconds($seconds);
 
-    Returns a copy of this instance with the given number of seconds
+    Returns a copy of this instance with the given number of *seconds*
     subtracted.
 
   minus_milliseconds
         $tm2 = $tm1->minus_milliseconds($milliseconds);
 
-    Returns a copy of this instance with the given number of milliseconds
+    Returns a copy of this instance with the given number of *milliseconds*
     subtracted.
 
   minus_microseconds
         $tm2 = $tm1->minus_microseconds($microseconds);
 
-    Returns a copy of this instance with the given number of microseconds
+    Returns a copy of this instance with the given number of *microseconds*
     subtracted.
 
   minus_nanoseconds
         $tm2 = $tm1->minus_nanoseconds($nanoseconds);
 
-    Returns a copy of this instance with the given number of nanoseconds
+    Returns a copy of this instance with the given number of *nanoseconds*
     subtracted.
+
+  delta_hours
+        $hours = $tm->delta_hours($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of hours. The result will be negative if the other time is
+    before this time.
+
+  delta_minutes
+        $minutes = $tm->delta_minutes($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of minutes. The result will be negative if the other time is
+    before this time.
+
+  delta_seconds
+        $seconds = $tm->delta_seconds($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of seconds. The result will be negative if the other time is
+    before this time.
+
+  delta_milliseconds
+        $milliseconds = $tm->delta_milliseconds($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of milliseconds. The result will be negative if the other time
+    is before this time.
+
+  delta_microseconds
+        $microseconds = $tm->delta_microseconds($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of microseconds. The result will be negative if the other time
+    is before this time.
+
+  delta_nanoseconds
+        $nanoseconds = $tm->delta_nanoseconds($other);
+
+    Returns the difference between the instant of this time and the *other*
+    in terms of nanoseconds. The result will be negative if the other time
+    is before this time.
 
   at_utc
         $tm2 = $tm1->at_utc;
@@ -825,34 +902,35 @@ INSTANCE METHODS
         $boolean = $tm->is_before($other);
 
     Returns a boolean indicating whether or not the instant of this time is
-    before the other time.
+    before the *other* time.
 
   is_after
         $boolean = $tm->is_after($other);
 
     Returns a boolean indicating whether or not the instant of this time is
-    after the other time.
+    after the *other* time.
 
   is_equal
         $boolean = $tm->is_equal($other);
 
     Returns a boolean indicating whether or not the instant of this time is
-    equal the other time.
+    equal the *other* time.
 
   compare
         $integer = $tm->compare($other);
 
     Returns an integer indicating whether the instant of this time is
-    before, after or equal another time. Returns a value less than zero if
-    this time is before the other; zero if this date is equal the other
+    before, after or equal the *other* time. Returns a value less than zero
+    if this time is before the other; zero if this date is equal the other
     time; a value greater than zero if this time is after the other time.
 
   to_string
         $string = $tm->to_string;
         $string = $tm->to_string([reduced => false]);
 
-    Returns a string representation of the instance. If the optional boolean
-    parameter *reduced* is true a shorter representation is attempted.
+    Returns a string representation of the instance. If the optional named
+    boolean parameter *reduced* is true a shorter representation is
+    attempted.
 
     The string will be in one of the following representations:
 
@@ -1447,7 +1525,7 @@ DIAGNOSTICS
     (F) Parameter '%s' is out of range
     (F) Parameter '%s' is out of the range [%d, %d]
     (F) Cannot coerce object of type %s to Time::Moment
-    (F) Cannot parse the given string
+    (F) Could not parse the given string
     (F) %s is not an instance of Time::Moment
     (F) A %s object can only be compared to another %s object ('%s', '%s')
 

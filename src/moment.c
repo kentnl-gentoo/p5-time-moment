@@ -75,103 +75,97 @@ moment_to_local_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos) {
 }
 
 static void
-THX_check_year(pTHX_ IV v) {
+THX_check_year(pTHX_ int64_t v) {
     if (v < 1 || v > 9999)
         croak("Parameter 'year' is out of the range [1, 9999]");
 }
 
 static void
-THX_check_month(pTHX_ IV v) {
+THX_check_month(pTHX_ int64_t v) {
     if (v < 1 || v > 12)
         croak("Parameter 'month' is out of the range [1, 12]");
 }
 
 static void
-THX_check_week(pTHX_ IV v) {
+THX_check_week(pTHX_ int64_t v) {
     if (v < 1 || v > 53)
         croak("Parameter 'week' is out of the range [1, 53]");
 }
 
 static void
-THX_check_day_of_year(pTHX_ IV v) {
+THX_check_day_of_year(pTHX_ int64_t v) {
     if (v < 1 || v > 366)
         croak("Parameter 'day' is out of the range [1, 366]");
 }
 
 static void
-THX_check_day_of_quarter(pTHX_ IV v) {
+THX_check_day_of_quarter(pTHX_ int64_t v) {
     if (v < 1 || v > 92)
         croak("Parameter 'day' is out of the range [1, 92]");
 }
 
 static void
-THX_check_day_of_month(pTHX_ IV v) {
+THX_check_day_of_month(pTHX_ int64_t v) {
     if (v < 1 || v > 31)
         croak("Parameter 'day' is out of the range [1, 31]");
 }
 
 static void
-THX_check_day_of_week(pTHX_ IV v) {
+THX_check_day_of_week(pTHX_ int64_t v) {
     if (v < 1 || v > 7)
         croak("Parameter 'day' is out of the range [1, 7]");
 }
 
 static void
-THX_check_hour(pTHX_ IV v) {
+THX_check_hour(pTHX_ int64_t v) {
     if (v < 0 || v > 23)
         croak("Parameter 'hour' is out of the range [1, 23]");
 }
 
 static void
-THX_check_minute(pTHX_ IV v) {
+THX_check_minute(pTHX_ int64_t v) {
     if (v < 0 || v > 59)
         croak("Parameter 'minute' is out of the range [1, 59]");
 }
 
 static void
-THX_check_minute_of_day(pTHX_ IV v) {
+THX_check_minute_of_day(pTHX_ int64_t v) {
     if (v < 0 || v > 1439)
         croak("Parameter 'minute' is out of the range [1, 1439]");
 }
 
 static void
-THX_check_second(pTHX_ IV v) {
+THX_check_second(pTHX_ int64_t v) {
     if (v < 0 || v > 59)
         croak("Parameter 'second' is out of the range [1, 59]");
 }
 
 static void
-THX_check_second_of_day(pTHX_ IV v) {
+THX_check_second_of_day(pTHX_ int64_t v) {
     if (v < 0 || v > 86399)
         croak("Parameter 'second' is out of the range [0, 86_399]");
 }
 
 static void
-THX_check_millisecond(pTHX_ IV v) {
+THX_check_millisecond(pTHX_ int64_t v) {
     if (v < 0 || v > 999)
         croak("Parameter 'millisecond' is out of the range [0, 999]");
 }
 
 static void
-THX_check_millisecond_of_day(pTHX_ IV v) {
-    if (v < 0 || v > 86400000)
-        croak("Parameter 'millisecond' is out of the range [0, 86_400_000]");
-}
-
-static void
-THX_check_microsecond(pTHX_ IV v) {
+THX_check_microsecond(pTHX_ int64_t v) {
     if (v < 0 || v > 999999)
         croak("Parameter 'microsecond' is out of the range [0, 999_999]");
 }
 
 static void
-THX_check_nanosecond(pTHX_ IV v) {
+THX_check_nanosecond(pTHX_ int64_t v) {
     if (v < 0 || v > 999999999)
         croak("Parameter 'nanosecond' is out of the range [0, 999_999_999]");
 }
 
 static void
-THX_check_offset(pTHX_ IV v) {
+THX_check_offset(pTHX_ int64_t v) {
     if (v < -1080 || v > 1080)
         croak("Parameter 'offset' is out of the range [-1080, 1080]");
 }
@@ -261,7 +255,7 @@ THX_moment_from_epoch_nv(pTHX_ NV sec) {
     if (n < 0)
         n += 1.0;
     s = s + Perl_floor(f - n);
-    n = Perl_floor(n * 1E9 + 0.5);
+    n = Perl_floor(n * 1E6 + 0.5) * 1000;
     return THX_moment_from_epoch(aTHX_ (int64_t)s, (IV)n, 0);
 }
 
@@ -352,7 +346,7 @@ THX_moment_with_local_dt(pTHX_ const moment_t *mt, const dt_t dt) {
 }
 
 static moment_t
-THX_moment_with_year(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_year(pTHX_ const moment_t *mt, int64_t v) {
     int y, m, d;
 
     THX_check_year(aTHX_ v);
@@ -367,7 +361,7 @@ THX_moment_with_year(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_month(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_month(pTHX_ const moment_t *mt, int64_t v) {
     int y, m, d;
 
     THX_check_month(aTHX_ v);
@@ -382,7 +376,7 @@ THX_moment_with_month(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_week(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_week(pTHX_ const moment_t *mt, int64_t v) {
     int y, w, d;
 
     THX_check_week(aTHX_ v);
@@ -397,7 +391,7 @@ THX_moment_with_week(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_day_of_month(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_day_of_month(pTHX_ const moment_t *mt, int64_t v) {
     int y, m, d;
 
     THX_check_day_of_month(aTHX_ v);
@@ -412,7 +406,7 @@ THX_moment_with_day_of_month(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_day_of_quarter(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_day_of_quarter(pTHX_ const moment_t *mt, int64_t v) {
     int y, q, d;
 
     THX_check_day_of_quarter(aTHX_ v);
@@ -427,7 +421,7 @@ THX_moment_with_day_of_quarter(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_day_of_year(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_day_of_year(pTHX_ const moment_t *mt, int64_t v) {
     int y, d;
 
     THX_check_day_of_year(aTHX_ v);
@@ -442,7 +436,7 @@ THX_moment_with_day_of_year(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_day_of_week(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_day_of_week(pTHX_ const moment_t *mt, int64_t v) {
     dt_t dt;
 
     THX_check_day_of_week(aTHX_ v);
@@ -451,7 +445,7 @@ THX_moment_with_day_of_week(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_hour(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_hour(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
     THX_check_hour(aTHX_ v);
@@ -460,7 +454,7 @@ THX_moment_with_hour(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_minute(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_minute(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
     THX_check_minute(aTHX_ v);
@@ -469,7 +463,7 @@ THX_moment_with_minute(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_minute_of_day(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_minute_of_day(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
     THX_check_minute_of_day(aTHX_ v);
@@ -478,7 +472,7 @@ THX_moment_with_minute_of_day(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_second(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_second(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
     THX_check_second(aTHX_ v);
@@ -487,7 +481,7 @@ THX_moment_with_second(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_second_of_day(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_second_of_day(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
     THX_check_second_of_day(aTHX_ v);
@@ -496,76 +490,100 @@ THX_moment_with_second_of_day(pTHX_ const moment_t *mt, IV v) {
 }
 
 static moment_t
-THX_moment_with_millisecond(pTHX_ const moment_t *mt, IV msec) {
+THX_moment_with_millisecond(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
-    THX_check_millisecond(aTHX_ msec);
+    THX_check_millisecond(aTHX_ v);
     sec = moment_local_rd_seconds(mt);
-    return THX_moment_from_local(aTHX_ sec, msec * 1000000, mt->offset);
+    return THX_moment_from_local(aTHX_ sec, v * 1000000, mt->offset);
 }
 
 static moment_t
-THX_moment_with_millisecond_of_day(pTHX_ const moment_t *mt, IV v) {
+THX_moment_with_microsecond(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
-    THX_check_millisecond_of_day(aTHX_ v);
-    sec = moment_local_rd_seconds(mt) + (v / 1000 - moment_second_of_day(mt));
-    return THX_moment_from_local(aTHX_ sec, (v % 1000) * 1000000, mt->offset);
+    THX_check_microsecond(aTHX_ v);
+    sec = moment_local_rd_seconds(mt);
+    return THX_moment_from_local(aTHX_ sec, v * 1000, mt->offset);
 }
 
 static moment_t
-THX_moment_with_microsecond(pTHX_ const moment_t *mt, IV usec) {
+THX_moment_with_nanosecond(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
-    THX_check_microsecond(aTHX_ usec);
+    THX_check_nanosecond(aTHX_ v);
     sec = moment_local_rd_seconds(mt);
-    return THX_moment_from_local(aTHX_ sec, usec * 1000, mt->offset);
+    return THX_moment_from_local(aTHX_ sec, v, mt->offset);
 }
 
 static moment_t
-THX_moment_with_nanosecond(pTHX_ const moment_t *mt, IV nsec) {
+THX_moment_with_nanosecond_of_day(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
+    int32_t nsec;
 
-    THX_check_nanosecond(aTHX_ nsec);
-    sec = moment_local_rd_seconds(mt);
+    if (v < 0 || v > INT64_C(86400000000000))
+        croak("Paramteter 'nanosecond' is out of the range [0, 86_400_000_000_000]");
+
+    sec = moment_local_rd_seconds(mt) + v / NANOS_PER_SEC - moment_second_of_day(mt);
+    nsec = v % NANOS_PER_SEC;
     return THX_moment_from_local(aTHX_ sec, nsec, mt->offset);
 }
 
+static moment_t
+THX_moment_with_microsecond_of_day(pTHX_ const moment_t *mt, int64_t v) {
+    if (v < 0 || v > INT64_C(86400000000))
+        croak("Paramteter 'microsecond' is out of the range [0, 86_400_000_000]");
+    return THX_moment_with_nanosecond_of_day(aTHX_ mt, v * 1000);
+}
+
+static moment_t
+THX_moment_with_millisecond_of_day(pTHX_ const moment_t *mt, int64_t v) {
+    if (v < 0 || v > INT64_C(86400000))
+        croak("Paramteter 'millisecond' is out of the range [0, 86_400_000]");
+    return THX_moment_with_nanosecond_of_day(aTHX_ mt, v * 1000000);
+}
+
 moment_t
-THX_moment_with_component(pTHX_ const moment_t *mt, moment_component_t c, IV v) {
+THX_moment_with_field(pTHX_ const moment_t *mt, moment_component_t c, int64_t v) {
     switch (c) {
-        case MOMENT_COMPONENT_YEAR:
+        case MOMENT_FIELD_YEAR:
             return THX_moment_with_year(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MONTH_OF_YEAR:
+        case MOMENT_FIELD_MONTH_OF_YEAR:
             return THX_moment_with_month(aTHX_ mt, v);
-        case MOMENT_COMPONENT_WEEK_OF_YEAR:
+        case MOMENT_FIELD_WEEK_OF_YEAR:
             return THX_moment_with_week(aTHX_ mt, v);
-        case MOMENT_COMPONENT_DAY_OF_MONTH:
+        case MOMENT_FIELD_DAY_OF_MONTH:
             return THX_moment_with_day_of_month(aTHX_ mt, v);
-        case MOMENT_COMPONENT_DAY_OF_QUARTER:
+        case MOMENT_FIELD_DAY_OF_QUARTER:
             return THX_moment_with_day_of_quarter(aTHX_ mt, v);
-        case MOMENT_COMPONENT_DAY_OF_YEAR:
+        case MOMENT_FIELD_DAY_OF_YEAR:
             return THX_moment_with_day_of_year(aTHX_ mt, v);
-        case MOMENT_COMPONENT_DAY_OF_WEEK:
+        case MOMENT_FIELD_DAY_OF_WEEK:
             return THX_moment_with_day_of_week(aTHX_ mt, v);
-        case MOMENT_COMPONENT_HOUR_OF_DAY:
+        case MOMENT_FIELD_HOUR_OF_DAY:
             return THX_moment_with_hour(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MINUTE_OF_HOUR:
+        case MOMENT_FIELD_MINUTE_OF_HOUR:
             return THX_moment_with_minute(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MINUTE_OF_DAY:
+        case MOMENT_FIELD_MINUTE_OF_DAY:
             return THX_moment_with_minute_of_day(aTHX_ mt, v);
-        case MOMENT_COMPONENT_SECOND_OF_MINUTE:
+        case MOMENT_FIELD_SECOND_OF_MINUTE:
             return THX_moment_with_second(aTHX_ mt, v);
-        case MOMENT_COMPONENT_SECOND_OF_DAY:
+        case MOMENT_FIELD_SECOND_OF_DAY:
             return THX_moment_with_second_of_day(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MILLI_OF_SECOND:
+        case MOMENT_FIELD_MILLI_OF_SECOND:
             return THX_moment_with_millisecond(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MILLI_OF_DAY:
+        case MOMENT_FIELD_MILLI_OF_DAY:
             return THX_moment_with_millisecond_of_day(aTHX_ mt, v);
-        case MOMENT_COMPONENT_MICRO_OF_SECOND:
+        case MOMENT_FIELD_MICRO_OF_SECOND:
             return THX_moment_with_microsecond(aTHX_ mt, v);
-        case MOMENT_COMPONENT_NANO_OF_SECOND:
+        case MOMENT_FIELD_MICRO_OF_DAY:
+            return THX_moment_with_microsecond_of_day(aTHX_ mt, v);
+        case MOMENT_FIELD_NANO_OF_SECOND:
             return THX_moment_with_nanosecond(aTHX_ mt, v);
+        case MOMENT_FIELD_NANO_OF_DAY:
+            return THX_moment_with_nanosecond_of_day(aTHX_ mt, v);
+        case MOMENT_FIELD_PRECISION:
+            return THX_moment_with_precision(aTHX_ mt, v);
     }
     croak("panic: THX_moment_with_component() called with unknown component (%d)", (int)c);
 }
@@ -708,7 +726,7 @@ THX_moment_with_offset_same_local(pTHX_ const moment_t *mt, IV offset) {
 }
 
 moment_t
-THX_moment_with_precision(pTHX_ const moment_t *mt, IV precision) {
+THX_moment_with_precision(pTHX_ const moment_t *mt, int64_t precision) {
     int64_t sec;
     int32_t nsec;
 
@@ -741,6 +759,87 @@ THX_moment_with_precision(pTHX_ const moment_t *mt, IV precision) {
         nsec -= nsec % pow_10[9 - precision];
     }
     return THX_moment_from_local(aTHX_ sec, nsec, mt->offset);
+}
+
+moment_duration_t
+moment_subtract_moment(const moment_t *mt1, const moment_t *mt2) {
+    const int64_t s1 = moment_instant_rd_seconds(mt1);
+    const int64_t s2 = moment_instant_rd_seconds(mt2);
+    moment_duration_t d;
+
+    d.sec = s1 - s2;
+    d.nsec = mt1->nsec - mt2->nsec;
+    if (d.nsec < 0) {
+        d.sec -= 1;
+        d.nsec += NANOS_PER_SEC;
+    }
+    return d;
+}
+
+static int64_t
+THX_moment_delta_hours(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    moment_duration_t d;
+    d = moment_subtract_moment(mt1, mt2);
+    return (d.sec / 3600);
+}
+
+static int64_t
+THX_moment_delta_minutes(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    moment_duration_t d;
+    d = moment_subtract_moment(mt1, mt2);
+    return (d.sec / 60);
+}
+
+static int64_t
+THX_moment_delta_seconds(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    moment_duration_t d;
+    d = moment_subtract_moment(mt1, mt2);
+    return d.sec;
+}
+
+static int64_t
+THX_moment_delta_milliseconds(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    moment_duration_t d;
+    d = moment_subtract_moment(mt1, mt2);
+    return d.sec * 1000 + (d.nsec / 1000000);
+}
+
+static int64_t
+THX_moment_delta_microseconds(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    moment_duration_t d;
+    d = moment_subtract_moment(mt1, mt2);
+    return d.sec * 1000000 + (d.nsec / 1000);
+}
+
+static int64_t
+THX_moment_delta_nanoseconds(pTHX_ const moment_t *mt1, const moment_t *mt2) {
+    static const int64_t kMaxSec = INT64_C(9223372035);
+    moment_duration_t d;
+
+    d = moment_subtract_moment(mt1, mt2);
+    if (d.sec > kMaxSec || d.sec < -kMaxSec)
+        croak("Nanosecond duration is too large to be represented in a 64-bit integer");
+    return d.sec * 1000000000 + d.nsec;
+}
+
+int64_t
+THX_moment_delta_unit(pTHX_ const moment_t *mt1, const moment_t *mt2, moment_unit_t u) {
+    switch (u) {
+        case MOMENT_UNIT_HOURS:
+            return THX_moment_delta_hours(aTHX_ mt1, mt2);
+        case MOMENT_UNIT_MINUTES:
+            return THX_moment_delta_minutes(aTHX_ mt1, mt2);
+        case MOMENT_UNIT_SECONDS:
+            return THX_moment_delta_seconds(aTHX_ mt1, mt2);
+        case MOMENT_UNIT_MILLIS:
+            return THX_moment_delta_milliseconds(aTHX_ mt1, mt2);
+        case MOMENT_UNIT_MICROS:
+            return THX_moment_delta_microseconds(aTHX_ mt1, mt2);
+        case MOMENT_UNIT_NANOS:
+            return THX_moment_delta_nanoseconds(aTHX_ mt1, mt2);
+        default:
+            croak("panic: THX_moment_delta_unit() called with unknown unit (%d)", (int)u);
+    }
 }
 
 moment_t
@@ -896,9 +995,21 @@ moment_microsecond(const moment_t *mt) {
     return (mt->nsec / 1000);
 }
 
+int64_t
+moment_microsecond_of_day(const moment_t *mt) {
+    const int64_t sod = moment_local_rd_seconds(mt) % 86400;
+    return sod * 1000000 + (mt->nsec / 1000);
+}
+
 int
 moment_nanosecond(const moment_t *mt) {
     return mt->nsec;
+}
+
+int64_t
+moment_nanosecond_of_day(const moment_t *mt) {
+    const int64_t sod = moment_local_rd_seconds(mt) % 86400;
+    return sod * 1000000000 + mt->nsec;
 }
 
 NV
