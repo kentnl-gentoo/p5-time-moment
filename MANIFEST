@@ -2,6 +2,8 @@
 Changes
 dev/bench.pl
 dev/sizeof.pl
+eg/ago.pl
+eg/beat.pl
 eg/cal.pl
 eg/cbor.pl
 eg/clocks.pl
@@ -70,6 +72,7 @@ t/410_with_offset.t
 t/415_with_precision.t
 t/420_at.t
 t/430_length.t
+t/450_delta_time.t
 t/500_storable.t
 t/510_json.t
 t/520_cbor.t
