@@ -14,7 +14,7 @@ SYNOPSIS
         );
         $tm = Time::Moment->now;
         $tm = Time::Moment->now_utc;
-        $tm = Time::Moment->from_epoch($seconds [, $nanosecond]);
+        $tm = Time::Moment->from_epoch($seconds);
         $tm = Time::Moment->from_object($object);
         $tm = Time::Moment->from_string($string);
         $tm = Time::Moment->from_jd($jd);
@@ -94,6 +94,10 @@ SYNOPSIS
         $tm2          = $tm1->minus_microseconds($microseconds);
         $tm2          = $tm1->minus_nanoseconds($nanoseconds);
     
+        $years        = $tm1->delta_years($tm2);
+        $months       = $tm1->delta_months($tm2);
+        $weeks        = $tm1->delta_weeks($tm2);
+        $days         = $tm1->delta_days($tm2);
         $hours        = $tm1->delta_hours($tm2);
         $minutes      = $tm1->delta_minutes($tm2);
         $seconds      = $tm1->delta_seconds($tm2);
@@ -103,8 +107,8 @@ SYNOPSIS
     
         $tm2          = $tm1->at_utc;
     
-        $tm2          = $tm1->at_midnight;              # T00:00:00.000000000
-        $tm2          = $tm1->at_noon;                  # T12:00:00.000000000
+        $tm2          = $tm1->at_midnight;              # T00:00:00.0
+        $tm2          = $tm1->at_noon;                  # T12:00:00.0
     
         $tm2          = $tm1->at_last_day_of_year;
         $tm2          = $tm1->at_last_day_of_quarter;
@@ -808,47 +812,75 @@ INSTANCE METHODS
     Returns a copy of this instance with the given number of *nanoseconds*
     subtracted.
 
+  delta_years
+        $years = $tm->delta_years($other);
+
+    Returns the difference between the local date of this moment and the
+    *other* in terms of complete years. The result will be negative if the
+    local date of the *other* moment is before this.
+
+  delta_months
+        $months = $tm->delta_months($other);
+
+    Returns the difference between the local date of this moment and the
+    *other* in terms of complete months. The result will be negative if the
+    local date of the *other* moment is before this.
+
+  delta_weeks
+        $weeks = $tm->delta_weeks($other);
+
+    Returns the difference between the local date of this moment and the
+    *other* in terms of complete weeks. The result will be negative if the
+    local date of the *other* moment is before this.
+
+  delta_days
+        $days = $tm->delta_days($other);
+
+    Returns the difference between the local date of this moment and the
+    *other* in terms of complete days. The result will be negative if the
+    local date of the *other* moment is before this.
+
   delta_hours
         $hours = $tm->delta_hours($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of hours. The result will be negative if the other time is
-    before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete hours. The result will be negative if the
+    instant of the *other* moment is before this.
 
   delta_minutes
         $minutes = $tm->delta_minutes($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of minutes. The result will be negative if the other time is
-    before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete minutes. The result will be negative if the
+    instant of the *other* moment is before this.
 
   delta_seconds
         $seconds = $tm->delta_seconds($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of seconds. The result will be negative if the other time is
-    before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete seconds. The result will be negative if the
+    instant of the *other* moment is before this.
 
   delta_milliseconds
         $milliseconds = $tm->delta_milliseconds($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of milliseconds. The result will be negative if the other time
-    is before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete milliseconds. The result will be negative
+    if the instant of the *other* moment is before this.
 
   delta_microseconds
         $microseconds = $tm->delta_microseconds($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of microseconds. The result will be negative if the other time
-    is before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete microseconds. The result will be negative
+    if the instant of the *other* moment is before this.
 
   delta_nanoseconds
         $nanoseconds = $tm->delta_nanoseconds($other);
 
-    Returns the difference between the instant of this time and the *other*
-    in terms of nanoseconds. The result will be negative if the other time
-    is before this time.
+    Returns the difference between the instant of this moment and the
+    *other* in terms of complete nanoseconds. The result will be negative if
+    the instant of the *other* moment is before this.
 
   at_utc
         $tm2 = $tm1->at_utc;
@@ -862,7 +894,7 @@ INSTANCE METHODS
         $tm2 = $tm1->at_midnight;
 
     Returns a copy of this instance with the time of day set to midnight,
-    T00:00:00.000000000. This method is equivalent to:
+    T00:00:00.0. This method is equivalent to:
 
         $tm2 = $tm1->with_hour(0)
                    ->with_minute(0)
@@ -873,7 +905,7 @@ INSTANCE METHODS
         $tm2 = $tm1->at_noon;
 
     Returns a copy of this instance with the time of day set to noon,
-    T12:00:00.000000000. This method is equivalent to:
+    T12:00:00.0. This method is equivalent to:
 
         $tm2 = $tm1->with_hour(12)
                    ->with_minute(0)
@@ -1482,7 +1514,7 @@ TIME ZONES
         }
 
     European Summer Time begins (clocks go forward) at 01:00 UTC on the last
-    Sunday in March, in 2014 the transition date is March 30.
+    Sunday in March, in 2014 the transition date was March 30.
 
         $tm1 = Time::Moment->from_string('2014-03-29T12+01');
         $tm2 = $tm1->plus_hours(24);
@@ -1500,7 +1532,7 @@ TIME ZONES
         say convert_from_local($tm2, $zone);   # raises an exception
 
     European Summer Time ends (clocks go backward) at 01:00 UTC on the last
-    Sunday in October, in 2014 the transition date is October 26.
+    Sunday in October, in 2014 the transition date was October 26.
 
         $tm1 = Time::Moment->from_string('2014-10-25T12+02');
         $tm2 = $tm1->plus_hours(24);
