@@ -13,5 +13,8 @@ before_install:
   - "cpanm Test::More"
   - "cpanm Test::Fatal"
   - "cpanm Test::Requires"
+  - "cpanm Test::Number::Delta"
+  - "cpanm Sereal"
+  - "cpanm Params::Coerce"
 script: "perl Makefile.PL; make test"
 

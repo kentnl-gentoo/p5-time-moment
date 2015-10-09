@@ -17,6 +17,7 @@ SYNOPSIS
         $tm = Time::Moment->from_epoch($seconds);
         $tm = Time::Moment->from_object($object);
         $tm = Time::Moment->from_string($string);
+        $tm = Time::Moment->from_rd($rd);
         $tm = Time::Moment->from_jd($jd);
         $tm = Time::Moment->from_mjd($mjd);
     
@@ -194,7 +195,7 @@ CONSTRUCTORS
         The nanosecond of the second [0, 999_999_999].
 
     offset
-        The time zone offset from UTC in minutes [-1080, 1080] (±18:00).
+        The offset from UTC in minutes [-1080, 1080] (±18:00).
 
   now
         $tm = Time::Moment->now;
@@ -233,9 +234,9 @@ CONSTRUCTORS
     DateTime
             $tm = Time::Moment->from_object( DateTime->now );
 
-        The given "DateTime" object must be within the supported date range
-        and must have a time zone or a time zone offset from UTC, coercing
-        from the 'floating' time zone is not supported.
+        The given "DateTime" object must be within the supported range and
+        must have a time zone or an offset from UTC, coercing from the
+        'floating' time zone is not supported.
 
     Time::Piece
             $tm = Time::Moment->from_object( scalar Time::Piece::localtime() );
@@ -250,9 +251,10 @@ CONSTRUCTORS
         $tm = Params::Coerce::coerce('Time::Moment', DateTime->now);
 
     "Time::Moment" also implements a coercion handler from "Time::Moment" to
-    "DateTime":
+    "DateTime" and "Time::Piece":
 
         $dt = Params::Coerce::coerce('DateTime', Time::Moment->now);
+        $tp = Params::Coerce::coerce('Time::Piece', Time::Moment->now);
 
   from_string
         $tm = Time::Moment->from_string($string);
@@ -260,12 +262,12 @@ CONSTRUCTORS
 
     Constructs an instance of "Time::Moment" from the given *string*. The
     string must consist of a complete date representation and time of day
-    followed by a time zone designator. The time of day may be reduced to
-    hour of the day, the second of the minute may have a decimal fraction.
-    The decimal sign can be either the comma [,] or the full stop [.]. A
-    decimal fraction must have at least one digit and may have a total of
-    nine digits, if the fractional precision is greater than nine digits,
-    the value will be truncated.
+    followed by a zone designator. The time of day may be reduced to hour of
+    the day, the second of the minute may have a decimal fraction. The
+    decimal sign can be either the comma [,] or the full stop [.]. A decimal
+    fraction must have at least one digit and may have a total of nine
+    digits, if the fractional precision is greater than nine digits, the
+    value will be truncated.
 
     The following are examples of complete date representations and time of
     day representations:
@@ -347,6 +349,35 @@ CONSTRUCTORS
     as a UTC designator and may have an offset. Usage of these string
     representations is strongly discouraged as they do not conform to the
     ISO 8601 standard.
+
+  from_rd
+        $tm = Time::Moment->from_rd($rd);
+        $tm = Time::Moment->from_rd($rd [, offset => 0] [, precision => 3] [, epoch => 0]);
+
+    Constructs an instance of "Time::Moment" from the given Rata Die. The
+    Rata Die is a count of days elapsed since 0000-12-31T00. The fractional
+    part corresponds to the fraction of the day after midnight. The minimum
+    acceptable Rata Die is 1 which corresponds to 0001-01-01T00.
+
+    Parameters:
+
+    offset
+            $tm = Time::Moment->from_rd($rd, offset => 0);
+
+        The optional parameter *offset* [-1080, 1080] (±18:00) specifies the
+        offset from UTC in minutes. The default offset is 0.
+
+    precision
+            $tm = Time::Moment->from_rd($rd, precision => 3);
+
+        The optional parameter *precision* [0, 9] specifies the precision of
+        the fractional seconds. The default precision is 3 (milliseconds).
+
+    epoch
+            $tm = Time::Moment->from_rd($rd, epoch => 0);
+
+        The optional parameter *epoch* specifies the epoch date relative to
+        0000-12-31T00. The epoch date for the Rata Die is 0.
 
   from_jd
         $tm = Time::Moment->from_jd($jd);
@@ -501,7 +532,7 @@ INSTANCE METHODS
   offset
         $offset = $tm->offset;
 
-    Returns the time zone offset from UTC in minutes [-1080, 1080] (±18:00).
+    Returns the offset from UTC in minutes [-1080, 1080] (±18:00).
 
   jd
         $jd = $tm->jd;
@@ -663,9 +694,9 @@ INSTANCE METHODS
   with_offset_same_instant
         $tm2 = $tm1->with_offset_same_instant($offset);
 
-    Returns a copy of this instance with the given time zone *offset* from
-    UTC in minutes [-1080, 1080] (±18:00) altered. The resulting time is at
-    the same instant.
+    Returns a copy of this instance with the given *offset* from UTC in
+    minutes [-1080, 1080] (±18:00) altered. The resulting time is at the
+    same instant.
 
         $tm = Time::Moment->from_string('2012-12-24T15-05')
                           ->with_offset_same_instant(0);
@@ -674,9 +705,9 @@ INSTANCE METHODS
   with_offset_same_local
         $tm2 = $tm1->with_offset_same_local($offset);
 
-    Returns a copy of this instance with the given time zone *offset* from
-    UTC in minutes [-1080, 1080] (±18:00) altered. The resulting time has
-    the same local time.
+    Returns a copy of this instance with the given *offset* from UTC in
+    minutes [-1080, 1080] (±18:00) altered. The resulting time has the same
+    local time.
 
         $tm = Time::Moment->from_string('2012-12-24T15-05')
                           ->with_offset_same_local(0);
@@ -885,7 +916,7 @@ INSTANCE METHODS
   at_utc
         $tm2 = $tm1->at_utc;
 
-    Returns a copy of this instance with the time zone offset set to zero.
+    Returns a copy of this instance with the offset from UTC set to zero.
     This method is equivalent to:
 
         $tm2 = $tm1->with_offset_same_instant(0);
@@ -1477,7 +1508,7 @@ TIME ZONES
             hour   => 15
         );
         $zone   = DateTime::TimeZone->new(name => 'America/New_York');
-        $offset = int($zone->offset_for_datetime($tm) / 60);
+        $offset = $zone->offset_for_datetime($tm) / 60;
     
         say $tm->with_offset_same_instant($offset); # 2012-12-24T10-05
 
@@ -1489,7 +1520,7 @@ TIME ZONES
             hour   => 15
         );
         $zone   = DateTime::TimeZone->new(name => 'America/New_York');
-        $offset = int($zone->offset_for_local_datetime($tm) / 60);
+        $offset = $zone->offset_for_local_datetime($tm) / 60;
     
         say $tm->with_offset_same_local($offset); # 2012-12-24T15-05
 
@@ -1503,13 +1534,13 @@ TIME ZONES
     
         sub convert_from_instant {
             my ($tm, $zone) = @_;
-            my $offset = int($zone->offset_for_datetime($tm) / 60);
+            my $offset = $zone->offset_for_datetime($tm) / 60;
             return $tm->with_offset_same_instant($offset);
         }
     
         sub convert_from_local {
             my ($tm, $zone) = @_;
-            my $offset = int($zone->offset_for_local_datetime($tm) / 60);
+            my $offset = $zone->offset_for_local_datetime($tm) / 60;
             return $tm->with_offset_same_local($offset);
         }
 

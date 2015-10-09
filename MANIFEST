@@ -65,6 +65,9 @@ t/140_from_object.t
 t/145_from_object_tp.t
 t/150_from_object_dt.t
 t/180_from_string.t
+t/190_rd.t
+t/191_jd.t
+t/192_mjd.t
 t/200_compare.t
 t/300_strftime.t
 t/400_with.t

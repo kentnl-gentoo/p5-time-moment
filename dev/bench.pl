@@ -2,11 +2,12 @@
 use strict;
 use warnings;
 
-use Benchmark     qw[];
-use DateTime      qw[];
-use Time::Moment  qw[];
-use Time::Piece   qw[];
-use POSIX         qw[];
+use Benchmark      qw[];
+use DateTime       qw[];
+use Time::Moment   qw[];
+use Time::Piece    qw[];
+use POSIX          qw[];
+use Params::Coerce qw[];
 
 {
     print "Benchmarking constructor: ->new()\n";
@@ -110,19 +111,56 @@ use POSIX         qw[];
 }
 
 {
-    print "\nBenchmarking arithmetic: +10 days -10 days\n";
+    print "\nBenchmarking arithmetic: +10 hours -10 hours\n";
     my $dt = DateTime->now;
     my $tm = Time::Moment->now_utc;
     my $tp = Time::Piece::gmtime();
     Benchmark::cmpthese( -10, {
         'DateTime' => sub {
-            my $r = $dt->add(days => 10)->subtract(days => 10);
+            my $r = $dt->add(hours => 10)->subtract(hours => 10);
         },
         'Time::Moment' => sub {
-            my $r = $tm->plus_days(10)->minus_days(10);
+            my $r = $tm->plus_hours(10)->minus_hours(10);
         },
         'Time::Piece' => sub {
-            my $r = $tp->add(86400 * 10)->add(-86400 * 10);
+            my $r = $tp->add(10*60*60)->add(-10*60*60);
+        },
+    });
+}
+
+{
+    print "\nBenchmarking arithmetic: delta hours\n";
+    my $tm1 = Time::Moment->from_string('2015-05-10T12+12');
+    my $tm2 = Time::Moment->from_string('2015-05-11T12-12');
+    my $dt1 = Params::Coerce::coerce('DateTime', $tm1);
+    my $dt2 = Params::Coerce::coerce('DateTime', $tm2);
+    my $tp1 = Params::Coerce::coerce('Time::Piece', $tm1);
+    my $tp2 = Params::Coerce::coerce('Time::Piece', $tm2);
+    Benchmark::cmpthese( -10, {
+        'DateTime' => sub {
+            my $r = $dt1->delta_ms($dt2)->hours;
+        },
+        'Time::Moment' => sub {
+            my $r = $tm1->delta_hours($tm2);
+        },
+        'Time::Piece' => sub {
+            my $r = int($tp2->subtract($tp1)->hours);
+        },
+    });
+}
+
+{
+    print "\nBenchmarking arithmetic: delta days\n";
+    my $tm1 = Time::Moment->from_string('2015-05-10T12+12');
+    my $tm2 = Time::Moment->from_string('2015-05-11T12-12');
+    my $dt1 = Params::Coerce::coerce('DateTime', $tm1);
+    my $dt2 = Params::Coerce::coerce('DateTime', $tm2);
+    Benchmark::cmpthese( -10, {
+        'DateTime' => sub {
+            my $r = $dt1->delta_days($dt2)->delta_days;
+        },
+        'Time::Moment' => sub {
+            my $r = $tm1->delta_days($tm2);
         },
     });
 }

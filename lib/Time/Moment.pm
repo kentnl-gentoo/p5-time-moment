@@ -5,7 +5,7 @@ use warnings;
 use Carp qw[];
 
 BEGIN {
-    our $VERSION = '0.31';
+    our $VERSION = '0.32';
     require XSLoader; XSLoader::load(__PACKAGE__, $VERSION);
 }
 
@@ -53,6 +53,11 @@ sub __as_DateTime {
         epoch     => $tm->epoch,
         time_zone => $tm->strftime('%Z'),
     )->set_nanosecond($tm->nanosecond);
+}
+
+sub __as_Time_Piece {
+    my ($tm) = @_;
+    return scalar Time::Piece::gmtime($tm->epoch);
 }
 
 sub DateTime::__as_Time_Moment {

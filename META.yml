@@ -6,6 +6,7 @@ build_requires:
   ExtUtils::MakeMaker: 6.59
   Test::Fatal: '0.006'
   Test::More: '0.88'
+  Test::Number::Delta: '1.06'
   Test::Requires: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.59
@@ -31,4 +32,4 @@ resources:
   bugtracker: https://github.com/chansen/p5-time-moment/issues
   license: http://dev.perl.org/licenses/
   repository: https://github.com/chansen/p5-time-moment
-version: '0.31'
+version: '0.32'
