@@ -213,12 +213,26 @@ CONSTRUCTORS
   from_epoch
         $tm = Time::Moment->from_epoch($seconds);
         $tm = Time::Moment->from_epoch($seconds, $nanosecond);
+        $tm = Time::Moment->from_epoch($seconds [, nanosecond => 0] [, precision => 6]);
 
     Constructs an instance of "Time::Moment" from the given *seconds* from
-    the epoch of 1970-01-01T00Z. The optional parameter *nanosecond*
-    specifies the nanosecond of the second [0, 999_999_999]. Fractional
-    seconds is supported if the constructor is invoked with *seconds* only,
-    fractional seconds is rounded to the nearest microsecond.
+    the epoch of 1970-01-01T00Z. Fractional seconds is supported if the
+    constructor is invoked with *seconds* only, the default precision is 6
+    (microseconds).
+
+    Parameters:
+
+    nanosecond
+            $tm = Time::Moment->from_epoch($seconds, nanosecond => 0);
+
+        The optional parameter *nanosecond* [0, 999_999_999] specifies the
+        nanosecond of the second.
+
+    precision
+            $tm = Time::Moment->from_epoch($rd, precision => 6);
+
+        The optional parameter *precision* [0, 9] specifies the precision of
+        the fractional seconds. The default precision is 6 (microseconds).
 
   from_object
         $tm = Time::Moment->from_object($object);
