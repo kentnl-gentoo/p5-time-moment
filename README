@@ -229,7 +229,7 @@ CONSTRUCTORS
         nanosecond of the second.
 
     precision
-            $tm = Time::Moment->from_epoch($rd, precision => 6);
+            $tm = Time::Moment->from_epoch($seconds, precision => 6);
 
         The optional parameter *precision* [0, 9] specifies the precision of
         the fractional seconds. The default precision is 6 (microseconds).
