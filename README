@@ -52,6 +52,7 @@ SYNOPSIS
     
         $tm2          = $tm1->with($adjuster);
         $tm2          = $tm1->with_year($year);
+        $tm2          = $tm1->with_quarter($quarter);
         $tm2          = $tm1->with_month($month);
         $tm2          = $tm1->with_week($week);
         $tm2          = $tm1->with_day_of_year($day);
@@ -149,7 +150,7 @@ DESCRIPTION
     "Time::Moment" is an immutable object representing a date and time of
     day with an offset from UTC in the ISO 8601 calendar system.
 
-    Time is measured in nanoseconds since "1970-01-01T00Z". In "Time:Moment"
+    Time is measured in nanoseconds since "0001-01-01T00Z". In "Time:Moment"
     leap seconds are ignored. It is assumed that there are exactly
     "86,400,000,000,000" nanoseconds per day. "Time::Moment" can represent
     all epoch integers from "-62,135,596,800" to "2,534,02,300,799"; this
@@ -283,8 +284,8 @@ CONSTRUCTORS
     digits, if the fractional precision is greater than nine digits, the
     value will be truncated.
 
-    The following are examples of complete date representations and time of
-    day representations:
+    The following are examples of complete date and time of day
+    representations:
 
         Basic format:                 Example:
         YYYYMMDDThhmmssZ              20121224T121530Z
@@ -319,7 +320,7 @@ CONSTRUCTORS
     subset of ISO 8601:2004 4.3 Date and time of day.
 
     If the optional boolean parameter *lenient* is true, the following
-    examples is also accepted:
+    examples are also accepted:
 
         YYYY-MM-DD hh:mm:ssZ          2012-12-24 12:15:30Z
         YYYY-MM-DD hh:mm:ssz          2012-12-24 12:15:30z
@@ -400,7 +401,7 @@ CONSTRUCTORS
     Constructs an instance of "Time::Moment" from the given Julian Date. The
     Julian Date is a count of days elapsed since -4713-11-24T12Z. The
     fractional part corresponds to the fraction of the day after noon. The
-    minimum acceptable Julian Date is -1721425.5 which corresponds to
+    minimum acceptable Julian Date is 1721425.5 which corresponds to
     0001-01-01T00Z.
 
     Parameters:
@@ -594,6 +595,14 @@ INSTANCE METHODS
     exist in the month. In that case, the day is set to the last day of the
     month.
 
+  with_quarter
+        $tm2 = $tm1->with_quarter($quarter);
+
+    Returns a copy of this instance with the given *quarter* of the year [1,
+    4] altered. The day of the month of the date is unchanged unless the day
+    does not exist in the month of the quarter. In that case, the day is set
+    to the last day of the month.
+
   with_month
         $tm2 = $tm1->with_month($month);
 
@@ -652,7 +661,7 @@ INSTANCE METHODS
         $tm2 = $tm1->with_minute_of_day($minute);
 
     Returns a copy of this instance with the given *minute* of the day [0,
-    1439] altered. The lower-order time elements is unaltered.
+    1439] altered, any lower-order time elements is unaltered.
 
   with_second
         $tm2 = $tm1->with_second($second);
@@ -664,7 +673,7 @@ INSTANCE METHODS
         $tm2 = $tm1->with_second_of_day($second);
 
     Returns a copy of this instance with the given *second* of the day [0,
-    86_399] altered. The lower-order time elements is unaltered.
+    86_399] altered, any lower-order time elements is unaltered.
 
   with_millisecond
         $tm2 = $tm1->with_millisecond($millisecond);
@@ -677,7 +686,9 @@ INSTANCE METHODS
         $tm2 = $tm1->with_millisecond_of_day($millisecond);
 
     Returns a copy of this instance with the given *millisecond* of the day
-    [0, 86_400_000] altered. The lower-order time elements are truncated.
+    [0, 86_400_000] altered. The millisecond value of 86_400_000 (T24:00) is
+    normalized to midnight of the following day, any lower-order time
+    elements is truncated.
 
   with_microsecond
         $tm2 = $tm1->with_microsecond($microsecond);
@@ -690,8 +701,9 @@ INSTANCE METHODS
         $tm2 = $tm1->with_microsecond_of_day($microsecond);
 
     Returns a copy of this instance with the given *microsecond* of the day
-    [0, 86_400_000_000] altered. The lower-order time elements are
-    truncated.
+    [0, 86_400_000_000] altered. The microsecond value of 86_400_000_000
+    (T24:00) is normalized to midnight of the following day, any lower-order
+    time elements is truncated.
 
   with_nanosecond
         $tm2 = $tm1->with_nanosecond($nanosecond);
@@ -703,7 +715,9 @@ INSTANCE METHODS
         $tm2 = $tm1->with_nanosecond_of_day($nanosecond);
 
     Returns a copy of this instance with the given *nanosecond* of the day
-    [0, 86_400_000_000_000] altered.
+    [0, 86_400_000_000_000] altered. The nanosecond value of
+    86_400_000_000_000 (T24:00) is normalized to midnight of the following
+    day.
 
   with_offset_same_instant
         $tm2 = $tm1->with_offset_same_instant($offset);
@@ -1317,7 +1331,7 @@ OVERLOADED OPERATORS
         "$tm" eq $tm->to_string;
         "$tm" eq $tm->strftime("%Y-%m-%dT%H:%M:%S%f%Z");
 
-    The total length of the string representation is between 20 and 35
+    The total length of the string representation will be between 20 and 35
     characters (inclusive).
 
   comparison

@@ -78,6 +78,7 @@ typedef enum {
 
 typedef enum {
     MOMENT_FIELD_YEAR=0,
+    MOMENT_FIELD_QUARTER_OF_YEAR,
     MOMENT_FIELD_MONTH_OF_YEAR,
     MOMENT_FIELD_WEEK_OF_YEAR,
     MOMENT_FIELD_DAY_OF_YEAR,
@@ -149,6 +150,7 @@ int         moment_nanosecond(const moment_t *mt);
 int64_t     moment_nanosecond_of_day(const moment_t *mt);
 int         moment_offset(const moment_t *mt);
 int64_t     moment_epoch(const moment_t *mt);
+int         moment_precision(const moment_t *mt);
 
 NV          moment_jd(const moment_t *mt);
 NV          moment_mjd(const moment_t *mt);

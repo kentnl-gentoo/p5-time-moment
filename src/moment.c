@@ -81,6 +81,12 @@ THX_check_year(pTHX_ int64_t v) {
 }
 
 static void
+THX_check_quarter(pTHX_ int64_t v) {
+    if (v < 1 || v > 4)
+        croak("Parameter 'quarter' is out of the range [1, 4]");
+}
+
+static void
 THX_check_month(pTHX_ int64_t v) {
     if (v < 1 || v > 12)
         croak("Parameter 'month' is out of the range [1, 12]");
@@ -243,8 +249,8 @@ THX_moment_from_epoch(pTHX_ int64_t sec, IV nsec, IV offset) {
 
 moment_t
 THX_moment_from_epoch_nv(pTHX_ NV sec, IV precision) {
-    static const NV SEC_MIN = -62135596801; /*  0000-12-31T23:59:59Z */
-    static const NV SEC_MAX = 253402300800; /* 10000-01-01T00:00:00Z */
+    static const NV SEC_MIN = -62135596801.0; /*  0000-12-31T23:59:59Z */
+    static const NV SEC_MAX = 253402300800.0; /* 10000-01-01T00:00:00Z */
     NV s, f, n, denom;
 
     if (precision < 0 || precision > 9)
@@ -400,12 +406,8 @@ THX_moment_with_local_dt(pTHX_ const moment_t *mt, const dt_t dt) {
 }
 
 static moment_t
-THX_moment_with_year(pTHX_ const moment_t *mt, int64_t v) {
-    int y, m, d;
+THX_moment_with_ymd(pTHX_ const moment_t *mt, int y, int m, int d) {
 
-    THX_check_year(aTHX_ v);
-    dt_to_ymd(moment_local_dt(mt), NULL, &m, &d);
-    y = (int)v;
     if (d > 28) {
         int dim = dt_days_in_month(y, m);
         if (d > dim)
@@ -415,18 +417,31 @@ THX_moment_with_year(pTHX_ const moment_t *mt, int64_t v) {
 }
 
 static moment_t
-THX_moment_with_month(pTHX_ const moment_t *mt, int64_t v) {
+THX_moment_with_year(pTHX_ const moment_t *mt, int64_t v) {
+    int m, d;
+
+    THX_check_year(aTHX_ v);
+    dt_to_ymd(moment_local_dt(mt), NULL, &m, &d);
+    return THX_moment_with_ymd(aTHX_ mt, (int)v, m, d);
+}
+
+static moment_t
+THX_moment_with_quarter(pTHX_ const moment_t *mt, int64_t v) {
     int y, m, d;
+
+    THX_check_quarter(aTHX_ v);
+    dt_to_ymd(moment_local_dt(mt), &y, &m, &d);
+    m = 1 + 3 * ((int)v - 1) + (m - 1) % 3;
+    return THX_moment_with_ymd(aTHX_ mt, y, m, d);
+}
+
+static moment_t
+THX_moment_with_month(pTHX_ const moment_t *mt, int64_t v) {
+    int y, d;
 
     THX_check_month(aTHX_ v);
     dt_to_ymd(moment_local_dt(mt), &y, NULL, &d);
-    m = (int)v;
-    if (d > 28) {
-        int dim = dt_days_in_month(y, m);
-        if (d > dim)
-            d = dim;
-    }
-    return THX_moment_with_local_dt(aTHX_ mt, dt_from_ymd(y, m, d));
+    return THX_moment_with_local_dt(aTHX_ mt, dt_from_ymd(y, (int)v, d));
 }
 
 static moment_t
@@ -602,6 +617,8 @@ THX_moment_with_field(pTHX_ const moment_t *mt, moment_component_t c, int64_t v)
     switch (c) {
         case MOMENT_FIELD_YEAR:
             return THX_moment_with_year(aTHX_ mt, v);
+        case MOMENT_FIELD_QUARTER_OF_YEAR:
+            return THX_moment_with_quarter(aTHX_ mt, v);
         case MOMENT_FIELD_MONTH_OF_YEAR:
             return THX_moment_with_month(aTHX_ mt, v);
         case MOMENT_FIELD_WEEK_OF_YEAR:
@@ -1122,6 +1139,25 @@ moment_rd(const moment_t *mt) {
 int
 moment_offset(const moment_t *mt) {
     return mt->offset;
+}
+
+int
+moment_precision(const moment_t *mt) {
+    int v;
+
+    v = mt->nsec;
+    if (v != 0) {
+        if      ((v % 1000000) == 0) return 3;
+        else if ((v %    1000) == 0) return 6;
+        else                         return 9;
+    }
+    v = moment_second_of_day(mt);
+    if (v != 0) {
+        if      ((v % 3600) == 0) return -2;
+        else if ((v %   60) == 0) return -1;
+        else                      return 0;
+    }
+    return -3;
 }
 
 int

@@ -721,6 +721,7 @@ with_year(self, value)
     dSTASH_INVOCANT;
   ALIAS:
     Time::Moment::with_year               = MOMENT_FIELD_YEAR
+    Time::Moment::with_quarter            = MOMENT_FIELD_QUARTER_OF_YEAR
     Time::Moment::with_month              = MOMENT_FIELD_MONTH_OF_YEAR
     Time::Moment::with_week               = MOMENT_FIELD_WEEK_OF_YEAR
     Time::Moment::with_day_of_year        = MOMENT_FIELD_DAY_OF_YEAR
@@ -796,6 +797,7 @@ year(self)
     Time::Moment::microsecond        = 15
     Time::Moment::nanosecond         = 16
     Time::Moment::offset             = 17
+    Time::Moment::precision          = 18
   PREINIT:
     IV v = 0;
   PPCODE:
@@ -818,6 +820,7 @@ year(self)
         case 15: v = moment_microsecond(self);          break;
         case 16: v = moment_nanosecond(self);           break;
         case 17: v = moment_offset(self);               break;
+        case 18: v = moment_precision(self);            break;
     }
     XSRETURN_IV(v);
 
