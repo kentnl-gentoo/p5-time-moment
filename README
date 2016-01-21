@@ -41,7 +41,7 @@ SYNOPSIS
         $microsecond  = $tm->microsecond;               # [0, 999_999]
         $microsecond  = $tm->microsecond_of_day;        # [0, 86_399_999_999]
         $nanosecond   = $tm->nanosecond;                # [0, 999_999_999]
-        $microsecond  = $tm->nanosecond_of_day;         # [0, 86_399_999_999_999]
+        $nanosecond   = $tm->nanosecond_of_day;         # [0, 86_399_999_999_999]
     
         $epoch        = $tm->epoch;
         $offset       = $tm->offset;                    # [-1080, 1080] (±18:00)
@@ -121,6 +121,8 @@ SYNOPSIS
         $boolean      = $tm1->is_equal($tm2);
     
         $integer      = $tm1->compare($tm2);
+    
+        $boolean      = $tm->is_leap_year;
     
         $string       = $tm->to_string;
         $string       = $tm->strftime($format);
@@ -686,7 +688,7 @@ INSTANCE METHODS
         $tm2 = $tm1->with_millisecond_of_day($millisecond);
 
     Returns a copy of this instance with the given *millisecond* of the day
-    [0, 86_400_000] altered. The millisecond value of 86_400_000 (T24:00) is
+    [0, 86_400_000] altered. A millisecond value of 86_400_000 (T24:00) is
     normalized to midnight of the following day, any lower-order time
     elements is truncated.
 
@@ -701,7 +703,7 @@ INSTANCE METHODS
         $tm2 = $tm1->with_microsecond_of_day($microsecond);
 
     Returns a copy of this instance with the given *microsecond* of the day
-    [0, 86_400_000_000] altered. The microsecond value of 86_400_000_000
+    [0, 86_400_000_000] altered. A microsecond value of 86_400_000_000
     (T24:00) is normalized to midnight of the following day, any lower-order
     time elements is truncated.
 
@@ -715,7 +717,7 @@ INSTANCE METHODS
         $tm2 = $tm1->with_nanosecond_of_day($nanosecond);
 
     Returns a copy of this instance with the given *nanosecond* of the day
-    [0, 86_400_000_000_000] altered. The nanosecond value of
+    [0, 86_400_000_000_000] altered. A nanosecond value of
     86_400_000_000_000 (T24:00) is normalized to midnight of the following
     day.
 
@@ -1014,6 +1016,12 @@ INSTANCE METHODS
     before, after or equal the *other* time. Returns a value less than zero
     if this time is before the other; zero if this date is equal the other
     time; a value greater than zero if this time is after the other time.
+
+  is_leap_year
+        $boolean = $tm->is_leap_year;
+
+    Returns a boolean indicating whether or not the year of the local date
+    of this moment is a leap year.
 
   to_string
         $string = $tm->to_string;
@@ -1646,7 +1654,7 @@ AUTHOR
     Christian Hansen "chansen@cpan.org"
 
 COPYRIGHT
-    Copyright 2013-2015 by Christian Hansen.
+    Copyright 2013-2016 by Christian Hansen.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
