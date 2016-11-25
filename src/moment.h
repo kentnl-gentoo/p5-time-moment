@@ -43,6 +43,9 @@
 #define MIN_UNIT_MICROS     INT64_C(-315569520000000000)
 #define MAX_UNIT_MICROS     INT64_C(315569520000000000)
 
+#define MIN_RATA_DIE_DAY    INT64_C(1)            /* 0001-01-01           */
+#define MAX_RATA_DIE_DAY    INT64_C(3652059)      /* 9999-12-31           */
+
 #define MIN_RANGE           INT64_C(86400)        /* 0001-01-01T00:00:00Z */
 #define MAX_RANGE           INT64_C(315537983999) /* 9999-12-31T23:59:59Z */
 #define UNIX_EPOCH          INT64_C(62135683200)  /* 1970-01-01T00:00:00Z */
@@ -97,6 +100,7 @@ typedef enum {
     MOMENT_FIELD_NANO_OF_SECOND,
     MOMENT_FIELD_NANO_OF_DAY,
     MOMENT_FIELD_PRECISION,
+    MOMENT_FIELD_RATA_DIE_DAY,
 } moment_component_t;
 
 moment_t    THX_moment_new(pTHX_ IV Y, IV M, IV D, IV h, IV m, IV s, IV ns, IV offset);
@@ -125,6 +129,7 @@ dt_t        moment_local_dt(const moment_t *mt);
 void        moment_to_instant_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 void        moment_to_local_rd_values(const moment_t *mt, IV *rdn, IV *sod, IV *nos);
 
+int         THX_moment_compare_precision(const moment_t *mt1, const moment_t *mt2, IV precision);
 int         moment_compare_instant(const moment_t *m1, const moment_t *m2);
 int         moment_compare_local(const moment_t *m1, const moment_t *m2);
 bool        moment_equals(const moment_t *m1, const moment_t *m2);
@@ -151,6 +156,7 @@ int64_t     moment_nanosecond_of_day(const moment_t *mt);
 int         moment_offset(const moment_t *mt);
 int64_t     moment_epoch(const moment_t *mt);
 int         moment_precision(const moment_t *mt);
+int         moment_rata_die_day(const moment_t *mt);
 
 bool        moment_is_leap_year(const moment_t *mt);
 
@@ -170,6 +176,9 @@ moment_t    THX_moment_at_last_day_of_year(pTHX_ const moment_t *mt);
 moment_t    THX_moment_at_last_day_of_quarter(pTHX_ const moment_t *mt);
 moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 
+
+int         THX_moment_internal_western_easter(pTHX_ int64_t y);
+int         THX_moment_internal_orthodox_easter(pTHX_ int64_t y);
 
 #define moment_new(Y, M, D, h, m, s, ns, offset) \
     THX_moment_new(aTHX_ Y, M, D, h, m, s, ns, offset)
@@ -231,4 +240,16 @@ moment_t    THX_moment_at_last_day_of_month(pTHX_ const moment_t *mt);
 #define moment_at_last_day_of_month(self) \
     THX_moment_at_last_day_of_month(aTHX_ self)
 
+#define moment_compare_precision(mt1, mt2, precision) \
+    THX_moment_compare_precision(aTHX_ mt1, mt2, precision)
+
+/* Internal API but exposed in Perl */
+
+#define moment_internal_western_easter(year) \
+    THX_moment_internal_western_easter(aTHX_ year)
+
+#define moment_internal_orthodox_easter(year) \
+    THX_moment_internal_orthodox_easter(aTHX_ year)
+
 #endif
+

@@ -4,6 +4,20 @@
 #include "dt_arithmetic.h"
 #include "dt_util.h"
 #include "dt_length.h"
+#include "dt_easter.h"
+
+static const int32_t kPow10[10] = {
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+};
 
 static void
 THX_moment_check_self(pTHX_ const moment_t *mt) {
@@ -180,6 +194,12 @@ static void
 THX_check_epoch_seconds(pTHX_ int64_t v) {
     if (!VALID_EPOCH_SEC(v))
         croak("Parameter 'seconds' is out of range");
+}
+
+static void
+THX_check_rata_die_day(pTHX_ int64_t v) {
+    if (v < MIN_RATA_DIE_DAY || v > MAX_RATA_DIE_DAY)
+        croak("Parameter 'rdn' is out of range");
 }
 
 static void
@@ -514,6 +534,15 @@ THX_moment_with_day_of_week(pTHX_ const moment_t *mt, int64_t v) {
 }
 
 static moment_t
+THX_moment_with_rata_die_day(pTHX_ const moment_t *mt, int64_t v) {
+    dt_t dt;
+
+    THX_check_rata_die_day(aTHX_ v);
+    dt = dt_from_rdn((int)v);
+    return THX_moment_with_local_dt(aTHX_ mt, dt);
+}
+
+static moment_t
 THX_moment_with_hour(pTHX_ const moment_t *mt, int64_t v) {
     int64_t sec;
 
@@ -655,6 +684,8 @@ THX_moment_with_field(pTHX_ const moment_t *mt, moment_component_t c, int64_t v)
             return THX_moment_with_nanosecond_of_day(aTHX_ mt, v);
         case MOMENT_FIELD_PRECISION:
             return THX_moment_with_precision(aTHX_ mt, v);
+        case MOMENT_FIELD_RATA_DIE_DAY:
+            return THX_moment_with_rata_die_day(aTHX_ mt, v);
     }
     croak("panic: THX_moment_with_component() called with unknown component (%d)", (int)c);
 }
@@ -815,19 +846,7 @@ THX_moment_with_precision(pTHX_ const moment_t *mt, int64_t precision) {
         }
     }
     else {
-        static const int32_t pow_10[10] = {
-            1,
-            10,
-            100,
-            1000,
-            10000,
-            100000,
-            1000000,
-            10000000,
-            100000000,
-            1000000000,
-        };
-        nsec -= nsec % pow_10[9 - precision];
+        nsec -= nsec % kPow10[9 - precision];
     }
     return THX_moment_from_local(aTHX_ sec, nsec, mt->offset);
 }
@@ -1008,6 +1027,44 @@ moment_compare_local(const moment_t *m1, const moment_t *m2) {
     return r;
 }
 
+int
+THX_moment_compare_precision(pTHX_ const moment_t *m1, const moment_t *m2, IV precision) {
+    int64_t n1, n2;
+    int r;
+
+    if (precision < -3 || precision > 9)
+        croak("Parameter 'precision' is out of the range [-3, 9]");
+
+    if (precision < 0) {
+        int32_t n;
+
+        n = 0;
+        switch (precision) {
+            case -1: n = 60;    break;
+            case -2: n = 3600;  break;
+            case -3: n = 86400; break;
+        }
+        n1 = moment_local_rd_seconds(m1);
+        n2 = moment_local_rd_seconds(m2);
+        n1 -= n1 % n;
+        n2 -= n2 % n;
+        n1 -= m1->offset * 60;
+        n2 -= m2->offset * 60;
+        r = (n1 > n2) - (n1 < n2);
+    }
+    else {
+        n1 = moment_instant_rd_seconds(m1);
+        n2 = moment_instant_rd_seconds(m2);
+        r = (n1 > n2) - (n1 < n2);
+        if (r == 0 && precision != 0) {
+            n1 = m1->nsec - m1->nsec % kPow10[9 - precision];
+            n2 = m2->nsec - m2->nsec % kPow10[9 - precision];
+            r = (n1 > n2) - (n1 < n2);
+        }
+    }
+    return r;
+}
+
 bool
 moment_equals(const moment_t *m1, const moment_t *m2) {
     return memcmp(m1, m2, sizeof(moment_t)) == 0;
@@ -1137,19 +1194,26 @@ moment_rd(const moment_t *mt) {
 }
 
 int
+moment_rata_die_day(const moment_t *mt) {
+    return dt_rdn(moment_local_dt(mt));
+}
+
+int
 moment_offset(const moment_t *mt) {
     return mt->offset;
 }
 
 int
 moment_precision(const moment_t *mt) {
-    int v;
+    int v, i;
 
     v = mt->nsec;
     if (v != 0) {
-        if      ((v % 1000000) == 0) return 3;
-        else if ((v %    1000) == 0) return 6;
-        else                         return 9;
+        for (i = 8; i > 0; i--) {
+            if ((v % kPow10[i]) == 0)
+                break;
+        }
+        return 9 - i;
     }
     v = moment_second_of_day(mt);
     if (v != 0) {
@@ -1184,3 +1248,16 @@ bool
 moment_is_leap_year(const moment_t *mt) {
     return dt_leap_year(moment_year(mt));
 }
+
+int
+THX_moment_internal_western_easter(pTHX_ int64_t y) {
+    THX_check_year(aTHX_ y);
+    return dt_rdn(dt_from_easter((int)y, DT_WESTERN));
+}
+
+int
+THX_moment_internal_orthodox_easter(pTHX_ int64_t y) {
+    THX_check_year(aTHX_ y);
+    return dt_rdn(dt_from_easter((int)y, DT_ORTHODOX));
+}
+

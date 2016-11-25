@@ -5,14 +5,17 @@ use warnings;
 use Carp qw[];
 
 BEGIN {
-    our $VERSION    = '0.38';
+    our $VERSION    = '0.39';
     our @EXPORT_OK  = qw[ NextDayOfWeek
                           NextOrSameDayOfWeek
                           PreviousDayOfWeek
                           PreviousOrSameDayOfWeek
                           FirstDayOfWeekInMonth
                           LastDayOfWeekInMonth
-                          NthDayOfWeekInMonth ];
+                          NthDayOfWeekInMonth
+                          WesternEasterSunday
+                          OthodoxEasterSunday
+                          NearestMinuteInterval ];
 
     our %EXPORT_TAGS = (
         all => [ @EXPORT_OK ],
@@ -130,4 +133,39 @@ sub NthDayOfWeekInMonth {
     }
 }
 
+sub WesternEasterSunday {
+    @_ == 0 or Carp::croak(q<Usage: WesternEasterSunday()>);
+
+    return sub {
+        my ($tm) = @_;
+        return $tm->with_rdn(Time::Moment::Internal::western_easter_sunday($tm->year));
+    };
+}
+
+sub OrthodoxEasterSunday {
+    @_ == 0 or Carp::croak(q<Usage: OrthodoxEasterSunday()>);
+
+    return sub {
+        my ($tm) = @_;
+        return $tm->with_rdn(Time::Moment::Internal::orthodox_easter_sunday($tm->year));
+    };
+}
+
+sub NearestMinuteInterval {
+    @_ == 1 or Carp::croak(q<Usage: NearestMinuteInterval(interval)>);
+    my ($interval) = @_;
+    
+    ($interval >= 1 && $interval <= 1439)
+      or Carp::croak(q<Parameter 'interval' is out of the range [1, 1439]>);
+    
+    my $msec = $interval * 60 * 1000;
+    my $mid  = int(($msec + 1) / 2);
+    return sub {
+        my ($tm) = @_;
+        my $msod = $msec * int(($tm->millisecond_of_day + $mid) / $msec);
+        return $tm->with_millisecond_of_day($msod);
+    };
+}
+
 1;
+

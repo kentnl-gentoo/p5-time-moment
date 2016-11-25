@@ -10,6 +10,7 @@ eg/cbor.pl
 eg/clocks.pl
 eg/excel.pl
 eg/json.pl
+eg/se_bank_holidays.pl
 eg/sereal.pl
 eg/strftime.pl
 eg/us_federal_holidays.pl
@@ -43,6 +44,8 @@ src/dt_arithmetic.h
 src/dt_config.h
 src/dt_core.c
 src/dt_core.h
+src/dt_easter.c
+src/dt_easter.h
 src/dt_length.c
 src/dt_length.h
 src/dt_parse_iso.c

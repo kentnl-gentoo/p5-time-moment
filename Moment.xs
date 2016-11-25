@@ -159,11 +159,11 @@ THX_sv_as_object(pTHX_ SV *sv, const char *name) {
 static SV *
 THX_sv_2neat(pTHX_ SV *sv) {
     if (sv_isobject(sv)) {
-        const char *name = sv_reftype(SvRV(sv), 1);
-        const char *type = sv_reftype(SvRV(sv), 0);
-        SV *dsv = sv_newmortal();
-        sv_setpvf(dsv, "%s=%s(0x%p)", name, type, SvRV(sv));
-        sv = dsv;
+        SV * const rv = SvRV(sv);
+        const char *name = sv_reftype(rv, 1);
+        const char *type = sv_reftype(rv, 0);
+        sv = sv_newmortal();
+        sv_setpvf(sv, "%s=%s(0x%p)", name, type, rv);
     }
     return sv;
 }
@@ -206,9 +206,7 @@ THX_sv_isa_stash(pTHX_ SV *sv, const char *klass, HV *stash, size_t size) {
     rv = SvRV(sv);
     if (!(SvOBJECT(rv) && SvSTASH(rv) && SvPOKp(rv) && SvCUR(rv) == size))
         return FALSE;
-    if (!(SvSTASH(rv) == stash || sv_derived_from(sv, klass)))
-        return FALSE;
-    return TRUE;
+    return (SvSTASH(rv) == stash || sv_derived_from(sv, klass));
 }
 
 static HV *
@@ -740,6 +738,7 @@ with_year(self, value)
     Time::Moment::with_nanosecond         = MOMENT_FIELD_NANO_OF_SECOND
     Time::Moment::with_nanosecond_of_day  = MOMENT_FIELD_NANO_OF_DAY
     Time::Moment::with_precision          = MOMENT_FIELD_PRECISION
+    Time::Moment::with_rdn                = MOMENT_FIELD_RATA_DIE_DAY
   CODE:
     RETVAL = moment_with_field(self, (moment_component_t)ix, value);
     if (moment_equals(self, &RETVAL))
@@ -798,6 +797,7 @@ year(self)
     Time::Moment::nanosecond         = 16
     Time::Moment::offset             = 17
     Time::Moment::precision          = 18
+    Time::Moment::rdn                = 19
   PREINIT:
     IV v = 0;
   PPCODE:
@@ -821,6 +821,7 @@ year(self)
         case 16: v = moment_nanosecond(self);           break;
         case 17: v = moment_offset(self);               break;
         case 18: v = moment_precision(self);            break;
+        case 19: v = moment_rata_die_day(self);         break;
     }
     XSRETURN_IV(v);
 
@@ -916,14 +917,32 @@ utc_rd_values(self)
     mPUSHi(nos);
     XSRETURN(3);
 
-IV
-compare(self, other)
+void
+compare(self, other, ...)
     const moment_t *self
     const moment_t *other
-  CODE:
-    RETVAL = moment_compare_instant(self, other);
-  OUTPUT:
-    RETVAL
+  PREINIT:
+    IV precision = 9;
+    I32 i;
+    IV r;
+  PPCODE:
+    if ((items % 2) != 0)
+        croak("Odd number of elements in named parameters");
+
+    for (i = 2; i < items; i += 2) {
+        switch (sv_moment_param(ST(i))) {
+            case MOMENT_PARAM_PRECISION:
+                precision = SvIV(ST(i+1));
+                break;
+            default:
+                croak("Unrecognised parameter: '%"SVf"'", ST(i));
+        }
+    }
+    if (precision == 9)
+        r = moment_compare_instant(self, other);
+    else
+        r = moment_compare_precision(self, other, precision);
+    XSRETURN_IV(r);
 
 void
 is_equal(self, other)
@@ -985,4 +1004,22 @@ to_string(self, ...)
         }
     }
     XSRETURN_SV(moment_to_string(self, reduced));
+
+
+MODULE = Time::Moment  PACKAGE = Time::Moment::Internal
+
+PROTOTYPES: DISABLE
+
+void
+western_easter_sunday(year)
+    IV year
+  PPCODE:
+    XSRETURN_IV(moment_internal_western_easter(year));
+
+void
+orthodox_easter_sunday(year)
+    IV year
+  PPCODE:
+    XSRETURN_IV(moment_internal_orthodox_easter(year));
+
 

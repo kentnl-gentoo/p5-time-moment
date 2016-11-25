@@ -74,6 +74,8 @@ SYNOPSIS
         $tm2          = $tm1->with_offset_same_instant($offset);
         $tm2          = $tm1->with_offset_same_local($offset);
     
+        $tm2          = $tm1->with_precision($precision);
+    
         $tm2          = $tm1->plus_years($years);
         $tm2          = $tm1->plus_months($months);
         $tm2          = $tm1->plus_weeks($weeks);
@@ -743,6 +745,23 @@ INSTANCE METHODS
                           ->with_offset_same_local(0);
         say $tm; # 2012-12-24T15Z
 
+  with_precision
+        $tm2 = $tm1->with_precision($precision);
+
+    Returns a copy of this instance with the time of the day altered to the
+    given *precision* [-3, 9]. A precision value between [0, 9] alters the
+    precision of the fractional seconds. A precision of -1 truncates to
+    minute of the hour; -2 truncates to hour of the day; -3 truncates to
+    midnight of the day.
+
+        $tm = Time::Moment->from_string('2012-12-24T12:30:45.123456789Z');
+        say $tm->with_precision(6);  # T12:30:45.123456Z
+        say $tm->with_precision(3);  # T12:30:45.123Z
+        say $tm->with_precision(0);  # T12:30:45Z
+        say $tm->with_precision(-1); # T12:30:00Z
+        say $tm->with_precision(-2); # T12:00:00Z
+        say $tm->with_precision(-3); # T00:00:00Z
+
   plus_years
         $tm2 = $tm1->plus_years($years);
 
@@ -1232,6 +1251,9 @@ INSTANCE METHODS
 
     %z  Replaced by the offset from UTC in the ISO 8601 basic format
         (±hhmm).
+
+    %:z Replaced by the offset from UTC in the ISO 8601 extended format
+        (±hh:mm).
 
     %Z  Replaced by the offset from UTC in the ISO 8601 extended format or
         by UTC designator (±hh:mm or Z).
