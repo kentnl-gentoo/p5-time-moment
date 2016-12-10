@@ -553,6 +553,12 @@ INSTANCE METHODS
 
     Returns the offset from UTC in minutes [-1080, 1080] (±18:00).
 
+  precision
+        $precision = $tm->precision;
+
+    Returns the precision of the time of the day [-3, 9]. Please see
+    with_precision for an explanation of the returned precision value.
+
   jd
         $jd = $tm->jd;
         $jd = $tm->jd([precision => 3]);
@@ -1030,11 +1036,15 @@ INSTANCE METHODS
 
   compare
         $integer = $tm->compare($other);
+        $integer = $tm->compare($other [, precision => 9]);
 
     Returns an integer indicating whether the instant of this time is
     before, after or equal the *other* time. Returns a value less than zero
     if this time is before the other; zero if this date is equal the other
     time; a value greater than zero if this time is after the other time.
+    The optional parameter *precision* [-3, 9] specifies the precision of
+    the comparison. The default precision is 9 (nanoseconds). Please see
+    with_precision for an explanation of the precision value.
 
   is_leap_year
         $boolean = $tm->is_leap_year;

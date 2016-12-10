@@ -628,6 +628,14 @@ Returns the number of integral seconds from the epoch of 1970-01-01T00Z.
 
 Returns the offset from UTC in minutes [-1080, 1080] (±18:00).
 
+=head2 precision
+
+    $precision = $tm->precision;
+
+Returns the precision of the time of the day [-3, 9]. Please see 
+L<with_precision|/with_precision> for an explanation of the 
+returned precision value.
+
 =head2 jd
 
     $jd = $tm->jd;
@@ -1157,11 +1165,15 @@ the I<other> time.
 =head2 compare
 
     $integer = $tm->compare($other);
+    $integer = $tm->compare($other [, precision => 9]);
 
 Returns an integer indicating whether the instant of this time is before, 
 after or equal the I<other> time. Returns a value less than zero if this 
 time is before the other; zero if this date is equal the other time; a value 
-greater than zero if this time is after the other time.
+greater than zero if this time is after the other time. The optional parameter
+I<precision> [-3, 9] specifies the precision of the comparison. The default 
+precision is 9 (nanoseconds). Please see L<with_precision|/with_precision> 
+for an explanation of the precision value.
 
 =head2 is_leap_year
 
